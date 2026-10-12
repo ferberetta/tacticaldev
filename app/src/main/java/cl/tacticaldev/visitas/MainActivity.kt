@@ -18,7 +18,7 @@ class MainActivity : ComponentActivity() {
         // Creamos todo A MANO, de abajo hacia arriba (sin Hilt ni Dagger):
         // 1) Base de datos  ->  2) DAO  ->  3) Repositorio  ->  4) ViewModel
         val baseDeDatos = AppDatabase.obtenerBase(applicationContext)
-        val repositorio = EquipoRepository(baseDeDatos.equipoDao())
+        val repositorio = EquipoRepository(baseDeDatos.equipoDao(), baseDeDatos.visitaDao())
         val factory = EquipoViewModelFactory(repositorio)
         val viewModel = ViewModelProvider(this, factory)[EquipoViewModel::class.java]
 

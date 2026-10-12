@@ -13,6 +13,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     // Room implementa esta función por nosotros y nos entrega el DAO.
     abstract fun equipoDao(): EquipoDao
+    abstract fun visitaDao(): VisitaDao
 
     // companion object = lo que va "estático" en Kotlin.
     // Lo uso para que exista UNA SOLA base de datos en toda la app (patrón Singleton).
