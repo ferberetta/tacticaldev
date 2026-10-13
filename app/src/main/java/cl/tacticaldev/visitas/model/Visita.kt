@@ -17,5 +17,20 @@ data class Visita(
     // La fecha va como texto, ej: "12-08-2026 10:24". Es lo más fácil de manejar.
     val fecha: String,
 
-    val observaciones: String
+    val observaciones: String,
+
+    // --- Campos nuevos para el historial ---
+
+    // Nombre del técnico que realizó la visita.
+    val tecnico: String,
+
+    // false = aún no se envía al servidor. Por defecto toda visita parte sin sincronizar.
+    val sincronizada: Boolean = false,
+
+    // Ruta de la foto de evidencia en el teléfono. null = visita sin foto.
+    val rutaFoto: String? = null,
+
+    // Ubicación GPS donde se hizo la visita. null = no se registró.
+    val latitud: Double? = null,
+    val longitud: Double? = null
 )
