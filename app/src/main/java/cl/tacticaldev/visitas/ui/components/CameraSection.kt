@@ -8,14 +8,18 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -83,10 +87,7 @@ fun CameraSection(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
             modifier = Modifier.fillMaxWidth(0.85f)
         ) {
-            Text(
-                text = "📷",
-                fontSize = 18.sp
-            )
+            Text(text = "📷", fontSize = 18.sp)
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "Tomar Foto de la Visita",
@@ -97,14 +98,30 @@ fun CameraSection(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        capturedBitmap?.let { bitmap ->
+        // Si hay foto se muestra, si no, se muestra la tarjeta de estado inicial
+        if (capturedBitmap != null) {
             Image(
-                bitmap = bitmap.asImageBitmap(),
+                bitmap = capturedBitmap!!.asImageBitmap(),
                 contentDescription = "Foto capturada",
                 modifier = Modifier
                     .size(250.dp)
                     .clip(RoundedCornerShape(16.dp))
             )
+        } else {
+            Box(
+                modifier = Modifier
+                    .size(250.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.LightGray.copy(alpha = 0.2f))
+                    .border(1.dp, Color.Gray.copy(alpha = 0.4f), RoundedCornerShape(16.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Sin fotografía capturada",
+                    color = Color.Gray,
+                    fontSize = 14.sp
+                )
+            }
         }
     }
 }
