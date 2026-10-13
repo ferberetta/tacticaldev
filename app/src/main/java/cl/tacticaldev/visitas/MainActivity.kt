@@ -10,29 +10,41 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModelProvider
+import cl.tacticaldev.visitas.model.AppDatabase
+import cl.tacticaldev.visitas.repository.EquipoRepository
 import cl.tacticaldev.visitas.ui.components.CameraSection
 import cl.tacticaldev.visitas.ui.theme.TacticalDEVTheme
+import cl.tacticaldev.visitas.viewmodel.EquipoViewModel
+import cl.tacticaldev.visitas.viewmodel.EquipoViewModelFactory
+import cl.tacticaldev.visitas.viewmodel.HistorialViewModel
+import cl.tacticaldev.visitas.viewmodel.HistorialViewModelFactory
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val baseDeDatos = AppDatabase.obtenerBase(applicationContext)
+
+        // Parte de Diego
+        val repositorio = EquipoRepository(baseDeDatos.equipoDao(), baseDeDatos.visitaDao())
+        val equipoViewModel = ViewModelProvider(
+            this, EquipoViewModelFactory(repositorio)
+        )[EquipoViewModel::class.java]
+
+        // Parte de Fernanda (historial)
+        val historialViewModel = ViewModelProvider(
+            this, HistorialViewModelFactory(baseDeDatos.visitaDao(), baseDeDatos.equipoDao())
+        )[HistorialViewModel::class.java]
+
         setContent {
             TacticalDEVTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Box(modifier = Modifier.padding(innerPadding)) {
-                        CameraSection(
-                            onPhotoCaptured = { uri ->
-                                // Notificación cuando la foto es capturada con éxito
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    "Foto guardada con éxito",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        )
-                    }
-                }
+                AppNavigation(
+                    equipoViewModel = equipoViewModel,
+                    historialViewModel = historialViewModel
+                )
             }
         }
     }
