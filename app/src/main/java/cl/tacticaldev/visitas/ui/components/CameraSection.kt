@@ -13,7 +13,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -90,7 +90,7 @@ fun CameraSection(
             Text(text = "📷", fontSize = 18.sp)
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Tomar Foto de la Visita",
+                text = if (capturedBitmap == null) "Tomar Foto de la Visita" else "Volver a Tomar Foto",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -98,15 +98,26 @@ fun CameraSection(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Si hay foto se muestra, si no, se muestra la tarjeta de estado inicial
         if (capturedBitmap != null) {
-            Image(
-                bitmap = capturedBitmap!!.asImageBitmap(),
-                contentDescription = "Foto capturada",
-                modifier = Modifier
-                    .size(250.dp)
-                    .clip(RoundedCornerShape(16.dp))
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Image(
+                    bitmap = capturedBitmap!!.asImageBitmap(),
+                    contentDescription = "Foto capturada",
+                    modifier = Modifier
+                        .size(250.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = {
+                        capturedBitmap = null
+                        photoUri = null
+                    },
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(text = "🗑️ Eliminar foto", color = Color.Red)
+                }
+            }
         } else {
             Box(
                 modifier = Modifier
