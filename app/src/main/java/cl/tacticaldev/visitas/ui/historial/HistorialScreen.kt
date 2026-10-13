@@ -1,5 +1,11 @@
 package cl.tacticaldev.visitas.ui.historial
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,10 +37,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -103,8 +114,15 @@ fun HistorialScreen(
             }
 
             if (lista.isEmpty()) {
+                var visibleVacio by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) { visibleVacio = true }
+                val alfaVacio by animateFloatAsState(
+                    targetValue = if (visibleVacio) 1f else 0f,
+                    animationSpec = tween(400),
+                    label = "alfaVacio"
+                )
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Aún no hay visitas")
+                    Text("Aún no hay visitas", modifier = Modifier.alpha(alfaVacio))
                 }
             } else {
                 LazyColumn(
@@ -112,7 +130,11 @@ fun HistorialScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(lista, key = { it.id }) { visita ->
-                        TarjetaVisita(visita = visita, onClick = { onVisitaClick(visita) })
+                        TarjetaVisita(
+                            visita = visita,
+                            onClick = { onVisitaClick(visita) },
+                            modifier = Modifier.animateItem()
+                        )
                     }
                 }
             }
@@ -121,26 +143,39 @@ fun HistorialScreen(
 }
 
 @Composable
-fun TarjetaVisita(visita: Visita, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { onClick() },
-        shape = RoundedCornerShape(16.dp)
+fun TarjetaVisita(
+    visita: Visita,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { visible = true }
+
+    AnimatedVisibility(
+        visible = visible,
+        modifier = modifier,
+        enter = fadeIn(tween(350)) + slideInVertically(tween(350)) { it / 4 }
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Card(
+            modifier = Modifier.fillMaxWidth().clickable { onClick() },
+            shape = RoundedCornerShape(16.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .background(Color(0xFFB0BEC5), RoundedCornerShape(8.dp))
-            )
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(visita.fechaHora, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(visita.equipo, fontSize = 14.sp)
-                Spacer(Modifier.height(6.dp))
-                EtiquetaEstado(sincronizada = visita.sincronizada)
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(Color(0xFFB0BEC5), RoundedCornerShape(8.dp))
+                )
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(visita.fechaHora, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(visita.equipo, fontSize = 14.sp)
+                    Spacer(Modifier.height(6.dp))
+                    EtiquetaEstado(sincronizada = visita.sincronizada)
+                }
             }
         }
     }
@@ -148,8 +183,16 @@ fun TarjetaVisita(visita: Visita, onClick: () -> Unit) {
 
 @Composable
 fun EtiquetaEstado(sincronizada: Boolean) {
-    val fondo = if (sincronizada) Color(0xFFD7F5E0) else Color(0xFFFFE3CC)
-    val punto = if (sincronizada) Color(0xFF2E9E5B) else Color(0xFFE8721C)
+    val fondo by animateColorAsState(
+        targetValue = if (sincronizada) Color(0xFFD7F5E0) else Color(0xFFFFE3CC),
+        animationSpec = tween(400),
+        label = "fondoEstado"
+    )
+    val punto by animateColorAsState(
+        targetValue = if (sincronizada) Color(0xFF2E9E5B) else Color(0xFFE8721C),
+        animationSpec = tween(400),
+        label = "puntoEstado"
+    )
     val texto = if (sincronizada) "Sincronizada" else "Pendiente"
 
     Row(
@@ -169,7 +212,7 @@ fun EtiquetaEstado(sincronizada: Boolean) {
 fun HistorialScreenPreview() {
     MaterialTheme {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            visitasFalsas.take(3).forEach { TarjetaVisita(it) {} }
+            visitasFalsas.take(3).forEach { TarjetaVisita(it, {}) }
         }
     }
 }
