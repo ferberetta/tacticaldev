@@ -57,7 +57,8 @@ class EquipoRepository(
                     Visita(
                         equipoId = equipo.id,
                         fecha = "10-08-2026 15:37",
-                        observaciones = "Revisión de rutina, temperatura estable"
+                        observaciones = "Revisión de rutina, temperatura estable",
+                        tecnico = "Juan Perez"
                     )
                 )
                 visitas.add(
@@ -65,7 +66,8 @@ class EquipoRepository(
                         equipoId = equipo.id,
                         fecha = "12-08-2026 10:24",
                         // La observación cambia según el estado actual del equipo
-                        observaciones = "Estado reportado: ${equipo.estado}. Se registra evidencia de la revisión"
+                        observaciones = "Estado reportado: ${equipo.estado}. Se registra evidencia de la revisión",
+                        tecnico = "Fernanda Rabietas"
                     )
                 )
             }

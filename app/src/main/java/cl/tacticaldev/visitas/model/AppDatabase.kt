@@ -6,9 +6,9 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 // @Database: aquí listamos TODAS las tablas (entities) de la base de datos.
-// version = 1: si algún día cambio las tablas, hay que subir este número.
+// version = 2: subí la versión porque agregué columnas a la tabla Visita.
 // exportSchema = false: para que no pida configurar carpetas de esquemas.
-@Database(entities = [Equipo::class, Visita::class], version = 1, exportSchema = false)
+@Database(entities = [Equipo::class, Visita::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     // Room implementa esta función por nosotros y nos entrega el DAO.
@@ -32,7 +32,11 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,   // applicationContext evita fugas de memoria
                     AppDatabase::class.java,
                     "tacticaldev_db"              // nombre del archivo de la base de datos
-                ).build()
+                )
+                    // Como los datos son ficticios, si cambia la versión se borra la base
+                    // y se vuelve a crear (los datos de ejemplo se siembran de nuevo).
+                    .fallbackToDestructiveMigration(dropAllTables = true)
+                    .build()
 
                 INSTANCIA = nuevaInstancia
                 nuevaInstancia
