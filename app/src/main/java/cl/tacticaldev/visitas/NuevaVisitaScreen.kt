@@ -199,4 +199,65 @@ fun NuevaVisitaScreen(
                 minLines = 3,
                 modifier = Modifier.fillMaxWidth()
             )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onTomarFoto, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.size(6.dp))
+                    Text("Fotografía")
+                }
+                OutlinedButton(onClick = onObtenerUbicacion, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.size(6.dp))
+                    Text("Ubicación")
+                }
+            }
+
+
+
+
+            AnimatedVisibility(
+                visible = guardada,
+                enter = fadeIn() + slideInVertically { it / 2 },
+                exit = fadeOut()
+            ) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF2E7D32)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
+                        Spacer(Modifier.size(8.dp))
+                        Text("Visita guardada", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+
+
+
+            Button(
+                onClick = {
+                    if (viewModel.guardar()) {
+                        guardada = true
+                        onGuardar(
+                            form.equipo,
+                            form.estado,
+                            form.cargo,
+                            formatearRut(form.rut),
+                            form.observaciones.trim()
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.size(6.dp))
+                Text("Guardar visita")
+            }
         }
+    }
+}
+
