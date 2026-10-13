@@ -1,14 +1,16 @@
 package cl.tacticaldev.visitas
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import cl.tacticaldev.visitas.data.visitasFalsas
 import cl.tacticaldev.visitas.ui.EquiposScreen
 import cl.tacticaldev.visitas.ui.historial.DetalleVisitaScreen
 import cl.tacticaldev.visitas.ui.historial.HistorialScreen
 import cl.tacticaldev.visitas.viewmodel.EquipoViewModel
+import cl.tacticaldev.visitas.viewmodel.HistorialViewModel
 
 object Rutas {
     const val HISTORIAL = "historial"
@@ -20,25 +22,30 @@ object Rutas {
 }
 
 @Composable
-fun AppNavigation(equipoViewModel: EquipoViewModel) {
+fun AppNavigation(
+    equipoViewModel: EquipoViewModel,
+    historialViewModel: HistorialViewModel
+) {
     val navController = rememberNavController()
+    val todas by historialViewModel.todas.collectAsState()
 
     NavHost(navController = navController, startDestination = Rutas.HISTORIAL) {
         composable(Rutas.HISTORIAL) {
             HistorialScreen(
+                viewModel = historialViewModel,
                 onVolver = { navController.popBackStack() },
                 onNuevaVisita = { /* Benjamín: navController.navigate(Rutas.NUEVA_VISITA) */ },
-                onVisitaClick = { visita ->
-                    navController.navigate(Rutas.detalle(visita.id))
+                onVisitaClick = { item ->
+                    navController.navigate(Rutas.detalle(item.visita.id))
                 }
             )
         }
         composable(Rutas.DETALLE) { entrada ->
             val id = entrada.arguments?.getString("visitaId")?.toIntOrNull()
-            val visita = visitasFalsas.firstOrNull { it.id == id }
-            if (visita != null) {
+            val item = todas.firstOrNull { it.visita.id == id }
+            if (item != null) {
                 DetalleVisitaScreen(
-                    visita = visita,
+                    item = item,
                     onVolver = { navController.popBackStack() }
                 )
             }

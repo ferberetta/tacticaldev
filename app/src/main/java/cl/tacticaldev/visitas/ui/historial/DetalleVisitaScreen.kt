@@ -28,12 +28,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import cl.tacticaldev.visitas.data.Visita
-import cl.tacticaldev.visitas.data.visitasFalsas
+import cl.tacticaldev.visitas.model.Visita
+import cl.tacticaldev.visitas.viewmodel.VisitaUi
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetalleVisitaScreen(visita: Visita, onVolver: () -> Unit = {}) {
+fun DetalleVisitaScreen(item: VisitaUi, onVolver: () -> Unit = {}) {
+    val visita = item.visita
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -53,11 +54,11 @@ fun DetalleVisitaScreen(visita: Visita, onVolver: () -> Unit = {}) {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(visita.equipo, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            Text(visita.puntoVenta, fontSize = 16.sp)
+            Text(item.equipoNombre, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(item.puntoVenta, fontSize = 16.sp)
             EtiquetaEstado(sincronizada = visita.sincronizada)
 
-            DatoDetalle("Fecha y hora", visita.fechaHora)
+            DatoDetalle("Fecha y hora", visita.fecha)
             DatoDetalle("Técnico", visita.tecnico)
             DatoDetalle("Observaciones", visita.observaciones)
 
@@ -68,7 +69,9 @@ fun DetalleVisitaScreen(visita: Visita, onVolver: () -> Unit = {}) {
                     .height(180.dp)
                     .background(Color(0xFFB0BEC5), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
-            ) { Text("Foto de la visita") }
+            ) {
+                Text(if (visita.rutaFoto == null) "Sin foto" else "Foto: ${visita.rutaFoto}")
+            }
 
             Text("Ubicación", fontWeight = FontWeight.Bold)
             Box(
@@ -77,7 +80,12 @@ fun DetalleVisitaScreen(visita: Visita, onVolver: () -> Unit = {}) {
                     .height(100.dp)
                     .background(Color(0xFFCFD8DC), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
-            ) { Text("Lat: ${visita.latitud}  Lon: ${visita.longitud}") }
+            ) {
+                Text(
+                    if (visita.latitud == null || visita.longitud == null) "Ubicación no registrada"
+                    else "Lat: ${visita.latitud}  Lon: ${visita.longitud}"
+                )
+            }
 
             Spacer(Modifier.height(8.dp))
         }
@@ -95,5 +103,13 @@ fun DatoDetalle(titulo: String, valor: String) {
 @Preview(showBackground = true)
 @Composable
 fun DetalleVisitaPreview() {
-    MaterialTheme { DetalleVisitaScreen(visita = visitasFalsas.first()) }
+    MaterialTheme {
+        DetalleVisitaScreen(
+            item = VisitaUi(
+                Visita(1, 1, "12-08-2026 10:24", "Temperatura estable", "Juan Perez", true, null, -33.4901, -70.7336),
+                "Vitrina Freezer A-102",
+                "Minimarket Maipú"
+            )
+        )
+    }
 }

@@ -51,28 +51,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import cl.tacticaldev.visitas.data.Visita
-import cl.tacticaldev.visitas.data.visitasFalsas
+import cl.tacticaldev.visitas.model.Visita
 import cl.tacticaldev.visitas.viewmodel.FiltroHistorial
 import cl.tacticaldev.visitas.viewmodel.HistorialViewModel
+import cl.tacticaldev.visitas.viewmodel.VisitaUi
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistorialScreen(
-    viewModel: HistorialViewModel = viewModel(),
+    viewModel: HistorialViewModel,
     onVolver: () -> Unit = {},
     onNuevaVisita: () -> Unit = {},
-    onVisitaClick: (Visita) -> Unit = {}
+    onVisitaClick: (VisitaUi) -> Unit = {}
 ) {
     val filtro by viewModel.filtro.collectAsState()
-    val visitas by viewModel.visitas.collectAsState()
-
-    val lista = when (filtro) {
-        FiltroHistorial.TODAS -> visitas
-        FiltroHistorial.COMPLETADAS -> visitas.filter { it.sincronizada }
-        FiltroHistorial.PENDIENTES -> visitas.filter { !it.sincronizada }
-    }
+    val lista by viewModel.visitasFiltradas.collectAsState()
 
     Scaffold(
         topBar = {
@@ -129,10 +122,10 @@ fun HistorialScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(lista, key = { it.id }) { visita ->
+                    items(lista, key = { it.visita.id }) { item ->
                         TarjetaVisita(
-                            visita = visita,
-                            onClick = { onVisitaClick(visita) },
+                            item = item,
+                            onClick = { onVisitaClick(item) },
                             modifier = Modifier.animateItem()
                         )
                     }
@@ -144,7 +137,7 @@ fun HistorialScreen(
 
 @Composable
 fun TarjetaVisita(
-    visita: Visita,
+    item: VisitaUi,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -171,10 +164,10 @@ fun TarjetaVisita(
                 )
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(visita.fechaHora, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text(visita.equipo, fontSize = 14.sp)
+                    Text(item.visita.fecha, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(item.equipoNombre, fontSize = 14.sp)
                     Spacer(Modifier.height(6.dp))
-                    EtiquetaEstado(sincronizada = visita.sincronizada)
+                    EtiquetaEstado(sincronizada = item.visita.sincronizada)
                 }
             }
         }
@@ -210,9 +203,13 @@ fun EtiquetaEstado(sincronizada: Boolean) {
 @Preview(showBackground = true)
 @Composable
 fun HistorialScreenPreview() {
+    val ejemplo = listOf(
+        VisitaUi(Visita(1, 1, "12-08-2026 10:24", "Todo bien", "Juan Perez", true), "Vitrina Freezer A-102", "Minimarket Maipú"),
+        VisitaUi(Visita(2, 2, "10-08-2026 15:37", "Ruido", "Fernanda", false), "Conservadora B-07", "Lider Cerrillos")
+    )
     MaterialTheme {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            visitasFalsas.take(3).forEach { TarjetaVisita(it, {}) }
+            ejemplo.forEach { TarjetaVisita(it, {}) }
         }
     }
 }

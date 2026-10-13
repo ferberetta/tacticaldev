@@ -10,6 +10,8 @@ import cl.tacticaldev.visitas.repository.EquipoRepository
 import cl.tacticaldev.visitas.ui.theme.TacticalDEVTheme
 import cl.tacticaldev.visitas.viewmodel.EquipoViewModel
 import cl.tacticaldev.visitas.viewmodel.EquipoViewModelFactory
+import cl.tacticaldev.visitas.viewmodel.HistorialViewModel
+import cl.tacticaldev.visitas.viewmodel.HistorialViewModelFactory
 
 class MainActivity : ComponentActivity() {
 
@@ -17,15 +19,25 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Base de datos -> DAO -> Repositorio -> ViewModel (parte de Diego)
         val baseDeDatos = AppDatabase.obtenerBase(applicationContext)
+
+        // Parte de Diego
         val repositorio = EquipoRepository(baseDeDatos.equipoDao(), baseDeDatos.visitaDao())
-        val factory = EquipoViewModelFactory(repositorio)
-        val equipoViewModel = ViewModelProvider(this, factory)[EquipoViewModel::class.java]
+        val equipoViewModel = ViewModelProvider(
+            this, EquipoViewModelFactory(repositorio)
+        )[EquipoViewModel::class.java]
+
+        // Parte de Fernanda (historial)
+        val historialViewModel = ViewModelProvider(
+            this, HistorialViewModelFactory(baseDeDatos.visitaDao(), baseDeDatos.equipoDao())
+        )[HistorialViewModel::class.java]
 
         setContent {
             TacticalDEVTheme {
-                AppNavigation(equipoViewModel = equipoViewModel)
+                AppNavigation(
+                    equipoViewModel = equipoViewModel,
+                    historialViewModel = historialViewModel
+                )
             }
         }
     }
