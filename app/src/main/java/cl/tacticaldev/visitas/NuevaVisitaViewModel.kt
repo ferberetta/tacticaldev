@@ -42,3 +42,79 @@ fun formatearRut(rut: String): String {
     val conPuntos = cuerpo.reversed().chunked(3).joinToString(".").reversed()
     return "$conPuntos-$dv"
 }
+
+
+data class NuevaVisitaState(
+    val equipo: String = "",
+    val estado: String = "",
+    val cargo: String = "",
+    val rut: String = "",
+    val observaciones: String = "",
+    val intentoGuardar: Boolean = false
+) {
+    val errorEquipo: String?
+        get() = if (intentoGuardar && equipo.isBlank()) "Selecciona un equipo" else null
+
+
+    val errorEstado: String?
+        get() = if (intentoGuardar && estado.isBlank()) "Selecciona el estado" else null
+
+
+    val errorCargo: String?
+        get() = if (intentoGuardar && cargo.isBlank()) "Selecciona el cargo" else null
+
+
+    val errorRut: String?
+        get() = when {
+            !intentoGuardar -> null
+            rut.isBlank() -> "Ingresa tu RUT"
+            !rutValido(rut) -> "RUT no válido"
+            else -> null
+        }
+
+
+    val errorObservaciones: String?
+        get() = if (intentoGuardar && observaciones.trim().length < 5)
+            "Escribe al menos 5 caracteres" else null
+
+
+    val esValido: Boolean
+        get() = equipo.isNotBlank() &&
+                estado.isNotBlank() &&
+                cargo.isNotBlank() &&
+                rutValido(rut) &&
+                observaciones.trim().length >= 5
+}
+
+
+class NuevaVisitaViewModel : ViewModel() {
+
+
+    private val _state = MutableStateFlow(NuevaVisitaState())
+    val state: StateFlow<NuevaVisitaState> = _state.asStateFlow()
+
+
+    fun cambiarEquipo(valor: String) = _state.update { it.copy(equipo = valor) }
+    fun cambiarEstado(valor: String) = _state.update { it.copy(estado = valor) }
+    fun cambiarCargo(valor: String) = _state.update { it.copy(cargo = valor) }
+    fun cambiarObservaciones(valor: String) = _state.update { it.copy(observaciones = valor) }
+
+
+
+
+    fun cambiarRut(valor: String) {
+        val limpio = valor.filter { it.isDigit() || it == 'k' || it == 'K' }
+            .uppercase()
+            .take(9)
+        _state.update { it.copy(rut = limpio) }
+    }
+
+
+
+
+    fun guardar(): Boolean {
+        _state.update { it.copy(intentoGuardar = true) }
+        return _state.value.esValido
+    }
+}
+
