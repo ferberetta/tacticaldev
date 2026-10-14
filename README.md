@@ -28,7 +28,7 @@ TacticalDEV desarrolla soluciones de trazabilidad para distribuidoras de product
 - **Persistencia local:** Room (SQLite) con tablas de equipos y visitas, y datos ficticios de ejemplo.
 - **Navegación:** Navigation Compose entre historial, detalle y equipos.
 - **Registrar visita (Benjamín):** [COMPLETAR según lo que se integre]
-- **Cámara (Eduardo):** [COMPLETAR según lo que se integre]
+- **Cámara y evidencia fotográfica (Eduardo):** captura de fotografías en alta resolución para respaldo de visitas mediante `ActivityResultContracts.TakePicture()`; gestión de permisos en tiempo de ejecución y configuración de `FileProvider` para almacenamiento seguro; componente `CameraSection` en Jetpack Compose con estado inicial, previsualización de la imagen capturada, opción de eliminación/recaptura y exposición de la `photoUri` para el guardado.
 - **Ubicación GPS (Jonathan):** [COMPLETAR según lo que se integre]
 
 ## Tecnologías
