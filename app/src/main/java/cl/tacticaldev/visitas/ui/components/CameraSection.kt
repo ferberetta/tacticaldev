@@ -34,7 +34,8 @@ import java.util.Locale
 
 @Composable
 fun CameraSection(
-    onPhotoCaptured: (Uri) -> Unit = {}
+    onPhotoCaptured: (Uri) -> Unit = {},
+    onPhotoRemoved: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var photoUri by remember { mutableStateOf<Uri?>(null) }
@@ -112,6 +113,7 @@ fun CameraSection(
                     onClick = {
                         capturedBitmap = null
                         photoUri = null
+                        onPhotoRemoved()
                     },
                     shape = RoundedCornerShape(10.dp)
                 ) {
