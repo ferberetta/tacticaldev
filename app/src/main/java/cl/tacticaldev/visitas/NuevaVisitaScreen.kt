@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.tacticaldev.visitas.model.Equipo
 import cl.tacticaldev.visitas.ui.components.CameraSection
+import cl.tacticaldev.visitas.ui.components.UbicacionSection
 
 import kotlinx.coroutines.delay
 
@@ -65,7 +66,8 @@ fun NuevaVisitaScreen(
     viewModel: NuevaVisitaViewModel = viewModel(),
     onFotoCapturada: (Uri) -> Unit = {},
     onFotoEliminada: () -> Unit = {},
-    onObtenerUbicacion: () -> Unit = {},
+    onUbicacionObtenida: (Double, Double) -> Unit = { _, _ -> },
+    onUbicacionEliminada: () -> Unit = {},
     onGuardar: (equipo: String, estado: String, procedencia: String, telefono: String, cargo: String, rut: String, observaciones: String) -> Unit =
         { _, _, _, _, _, _, _ -> }
 ) {
@@ -241,11 +243,11 @@ fun NuevaVisitaScreen(
                 onPhotoRemoved = onFotoEliminada
             )
 
-            OutlinedButton(onClick = onObtenerUbicacion, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.size(6.dp))
-                Text("Ubicación")
-            }
+            // Geolocalización: botón para obtener la latitud y longitud del teléfono.
+            UbicacionSection(
+                onUbicacionObtenida = onUbicacionObtenida,
+                onUbicacionEliminada = onUbicacionEliminada
+            )
 
 
 

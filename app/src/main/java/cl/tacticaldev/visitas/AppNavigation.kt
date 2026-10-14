@@ -60,14 +60,21 @@ fun AppNavigation(
         composable(Rutas.NUEVA_VISITA) {
             // Foto tomada con la cámara en este formulario (null = sin foto).
             var fotoUri by remember { mutableStateOf<Uri?>(null) }
+            // Ubicación obtenida con el botón de geolocalización (null = sin ubicación).
+            var latitud by remember { mutableStateOf<Double?>(null) }
+            var longitud by remember { mutableStateOf<Double?>(null) }
 
             NuevaVisitaScreen(
                 equipos = equipos,
                 onFotoCapturada = { fotoUri = it },
                 onFotoEliminada = { fotoUri = null },
+                onUbicacionObtenida = { lat, lon -> latitud = lat; longitud = lon },
+                onUbicacionEliminada = { latitud = null; longitud = null },
                 onGuardar = { equipo, estado, procedencia, telefono, cargo, rut, observaciones ->
                     val equipoId = equipos.firstOrNull { it.nombre == equipo }?.id
                     val rutaFoto = fotoUri?.toString()
+                    val lat = latitud
+                    val lon = longitud
                     scope.launch {
                         if (equipoId != null) {
                             val fecha = SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault())
@@ -78,7 +85,9 @@ fun AppNavigation(
                                     fecha = fecha,
                                     observaciones = observaciones,
                                     tecnico = "$cargo $rut",
-                                    rutaFoto = rutaFoto
+                                    rutaFoto = rutaFoto,
+                                    latitud = lat,
+                                    longitud = lon
                                 )
                             )
                         }
