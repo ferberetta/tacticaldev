@@ -1,33 +1,51 @@
 package cl.tacticaldev.visitas
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModelProvider
+import cl.tacticaldev.visitas.model.AppDatabase
+import cl.tacticaldev.visitas.repository.EquipoRepository
+import cl.tacticaldev.visitas.ui.components.CameraSection
 import cl.tacticaldev.visitas.ui.theme.TacticalDEVTheme
+import cl.tacticaldev.visitas.viewmodel.EquipoViewModel
+import cl.tacticaldev.visitas.viewmodel.EquipoViewModelFactory
+import cl.tacticaldev.visitas.viewmodel.HistorialViewModel
+import cl.tacticaldev.visitas.viewmodel.HistorialViewModelFactory
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val baseDeDatos = AppDatabase.obtenerBase(applicationContext)
+
+
+        val repositorio = EquipoRepository(baseDeDatos.equipoDao(), baseDeDatos.visitaDao())
+        val equipoViewModel = ViewModelProvider(
+            this, EquipoViewModelFactory(repositorio)
+        )[EquipoViewModel::class.java]
+
+
+        val historialViewModel = ViewModelProvider(
+            this, HistorialViewModelFactory(baseDeDatos.visitaDao(), baseDeDatos.equipoDao())
+        )[HistorialViewModel::class.java]
+
         setContent {
             TacticalDEVTheme {
-                NuevaVisitaScreen(
-                    equipos = listOf("Vitrina Freezer A-102", "Conservadora B-07", "Vitrina Freezer C-15")
+                AppNavigation(
+                    equipoViewModel = equipoViewModel,
+                    historialViewModel = historialViewModel
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun NuevaVisitaPreview() {
-    TacticalDEVTheme {
-        NuevaVisitaScreen(
-            equipos = listOf("Vitrina Freezer A-102", "Conservadora B-07")
-        )
     }
 }
