@@ -1,10 +1,14 @@
 package cl.tacticaldev.visitas.ui.historial
 
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,9 +25,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -35,6 +44,18 @@ import cl.tacticaldev.visitas.viewmodel.VisitaUi
 @Composable
 fun DetalleVisitaScreen(item: VisitaUi, onVolver: () -> Unit = {}) {
     val visita = item.visita
+    val context = LocalContext.current
+    // Carga la foto guardada en la visita (reducida para no gastar memoria).
+    val foto = remember(visita.rutaFoto) {
+        visita.rutaFoto?.let { ruta ->
+            runCatching {
+                val opciones = BitmapFactory.Options().apply { inSampleSize = 4 }
+                context.contentResolver.openInputStream(Uri.parse(ruta))?.use { entrada ->
+                    BitmapFactory.decodeStream(entrada, null, opciones)
+                }
+            }.getOrNull()
+        }
+    }
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -70,7 +91,16 @@ fun DetalleVisitaScreen(item: VisitaUi, onVolver: () -> Unit = {}) {
                     .background(Color(0xFFB0BEC5), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(if (visita.rutaFoto == null) "Sin foto" else "Foto: ${visita.rutaFoto}")
+                if (foto != null) {
+                    Image(
+                        bitmap = foto.asImageBitmap(),
+                        contentDescription = "Foto de la visita",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp))
+                    )
+                } else {
+                    Text(if (visita.rutaFoto == null) "Sin foto" else "No se pudo cargar la foto")
+                }
             }
 
             Text("Ubicación", fontWeight = FontWeight.Bold)

@@ -1,5 +1,6 @@
 package cl.tacticaldev.visitas
 
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -53,6 +54,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.tacticaldev.visitas.model.Equipo
+import cl.tacticaldev.visitas.ui.components.CameraSection
 
 import kotlinx.coroutines.delay
 
@@ -61,7 +63,8 @@ import kotlinx.coroutines.delay
 fun NuevaVisitaScreen(
     equipos: List<Equipo>,
     viewModel: NuevaVisitaViewModel = viewModel(),
-    onTomarFoto: () -> Unit = {},
+    onFotoCapturada: (Uri) -> Unit = {},
+    onFotoEliminada: () -> Unit = {},
     onObtenerUbicacion: () -> Unit = {},
     onGuardar: (equipo: String, estado: String, procedencia: String, telefono: String, cargo: String, rut: String, observaciones: String) -> Unit =
         { _, _, _, _, _, _, _ -> }
@@ -232,17 +235,16 @@ fun NuevaVisitaScreen(
                 minLines = 3,
                 modifier = Modifier.fillMaxWidth()
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = onTomarFoto, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.size(6.dp))
-                    Text("Fotografía")
-                }
-                OutlinedButton(onClick = onObtenerUbicacion, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.size(6.dp))
-                    Text("Ubicación")
-                }
+            // Cámara (trabajo de Eduardo): botón para tomar la foto, vista previa y eliminar.
+            CameraSection(
+                onPhotoCaptured = onFotoCapturada,
+                onPhotoRemoved = onFotoEliminada
+            )
+
+            OutlinedButton(onClick = onObtenerUbicacion, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.size(6.dp))
+                Text("Ubicación")
             }
 
 
