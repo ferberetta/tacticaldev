@@ -167,6 +167,14 @@ fun NuevaVisitaScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Geolocalización: botón para obtener la latitud y longitud del teléfono.
+            UbicacionSection(
+                onUbicacionObtenida = onUbicacionObtenida,
+                onUbicacionEliminada = onUbicacionEliminada
+            )
+
+
+
 
             OutlinedTextField(
                 value = form.telefono,
@@ -242,14 +250,6 @@ fun NuevaVisitaScreen(
                 onPhotoCaptured = onFotoCapturada,
                 onPhotoRemoved = onFotoEliminada
             )
-
-            // Geolocalización: botón para obtener la latitud y longitud del teléfono.
-            UbicacionSection(
-                onUbicacionObtenida = onUbicacionObtenida,
-                onUbicacionEliminada = onUbicacionEliminada
-            )
-
-
 
 
             AnimatedVisibility(
