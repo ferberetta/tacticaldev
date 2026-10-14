@@ -28,13 +28,13 @@ class MainActivity : ComponentActivity() {
 
         val baseDeDatos = AppDatabase.obtenerBase(applicationContext)
 
-        // Parte de Diego
+
         val repositorio = EquipoRepository(baseDeDatos.equipoDao(), baseDeDatos.visitaDao())
         val equipoViewModel = ViewModelProvider(
             this, EquipoViewModelFactory(repositorio)
         )[EquipoViewModel::class.java]
 
-        // Parte de Fernanda (historial)
+
         val historialViewModel = ViewModelProvider(
             this, HistorialViewModelFactory(baseDeDatos.visitaDao(), baseDeDatos.equipoDao())
         )[HistorialViewModel::class.java]
