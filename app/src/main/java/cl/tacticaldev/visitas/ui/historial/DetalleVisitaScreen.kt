@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import cl.tacticaldev.visitas.model.Visita
 import cl.tacticaldev.visitas.ui.components.abrirEnGoogleMaps
 import cl.tacticaldev.visitas.viewmodel.VisitaUi
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,7 +56,7 @@ fun DetalleVisitaScreen(item: VisitaUi, onVolver: () -> Unit = {}) {
         visita.rutaFoto?.let { ruta ->
             runCatching {
                 val opciones = BitmapFactory.Options().apply { inSampleSize = 4 }
-                context.contentResolver.openInputStream(Uri.parse(ruta))?.use { entrada ->
+                context.contentResolver.openInputStream(ruta.toUri())?.use { entrada ->
                     BitmapFactory.decodeStream(entrada, null, opciones)
                 }
             }.getOrNull()
