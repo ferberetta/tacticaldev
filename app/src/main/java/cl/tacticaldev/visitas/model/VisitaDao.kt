@@ -22,4 +22,7 @@ interface VisitaDao {
     // cambia la tabla. Ojo: NO lleva "suspend" porque Flow ya es asíncrono.
     @Query("SELECT * FROM visitas")
     fun obtenerTodas(): Flow<List<Visita>>
+
+    @Insert
+    suspend fun insertar(visita: Visita)
 }

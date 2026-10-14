@@ -43,7 +43,8 @@ class MainActivity : ComponentActivity() {
             TacticalDEVTheme {
                 AppNavigation(
                     equipoViewModel = equipoViewModel,
-                    historialViewModel = historialViewModel
+                    historialViewModel = historialViewModel,
+                    visitaDao = baseDeDatos.visitaDao()
                 )
             }
         }

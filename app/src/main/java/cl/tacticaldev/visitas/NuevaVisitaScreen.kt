@@ -52,12 +52,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import cl.tacticaldev.visitas.model.Equipo
+
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NuevaVisitaScreen(
-    equipos: List<String>,
+    equipos: List<Equipo>,
     viewModel: NuevaVisitaViewModel = viewModel(),
     onTomarFoto: () -> Unit = {},
     onObtenerUbicacion: () -> Unit = {},
@@ -112,14 +114,16 @@ fun NuevaVisitaScreen(
                 ExposedDropdownMenu(
                     expanded = menuEquipo,
                     onDismissRequest = { menuEquipo = false }) {
-                    equipos.forEach { nombre ->
+                    equipos.forEach { equipo ->
                         DropdownMenuItem(
-                            text = { Text(nombre) },
-                            onClick = { viewModel.cambiarEquipo(nombre); menuEquipo = false }
+                            text = { Text(equipo.nombre) },
+                            onClick = { viewModel.cambiarEquipo(equipo.nombre); menuEquipo = false }
                         )
                     }
                 }
             }
+
+
 
             ExposedDropdownMenuBox(expanded = menuEstado, onExpandedChange = { menuEstado = it }) {
                 OutlinedTextField(
