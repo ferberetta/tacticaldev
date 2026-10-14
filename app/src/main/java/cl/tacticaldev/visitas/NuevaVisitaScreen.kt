@@ -22,7 +22,9 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -59,8 +61,8 @@ fun NuevaVisitaScreen(
     viewModel: NuevaVisitaViewModel = viewModel(),
     onTomarFoto: () -> Unit = {},
     onObtenerUbicacion: () -> Unit = {},
-    onGuardar: (equipo: String, estado: String, cargo: String, rut: String, observaciones: String) -> Unit =
-        { _, _, _, _, _ -> }
+    onGuardar: (equipo: String, estado: String, procedencia: String, telefono: String, cargo: String, rut: String, observaciones: String) -> Unit =
+        { _, _, _, _, _, _, _ -> }
 ) {
     val estados = listOf("Operativo", "Con falla", "Sin conexión")
     val cargos = listOf("Técnico", "Vendedor")
@@ -142,6 +144,33 @@ fun NuevaVisitaScreen(
                     }
                 }
             }
+
+
+            OutlinedTextField(
+                value = form.procedencia,
+                onValueChange = { viewModel.cambiarProcedencia(it) },
+                label = { Text("Procedencia del lugar") },
+                placeholder = { Text("Ej. Almacén Don Pepe") },
+                leadingIcon = { Icon(Icons.Default.Store, contentDescription = null) },
+                isError = form.errorProcedencia != null,
+                supportingText = { form.errorProcedencia?.let { Text(it) } },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+
+            OutlinedTextField(
+                value = form.telefono,
+                onValueChange = { viewModel.cambiarTelefono(it) },
+                label = { Text("Teléfono de contacto") },
+                placeholder = { Text("Ej. 912345678") },
+                leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
+                isError = form.errorTelefono != null,
+                supportingText = { form.errorTelefono?.let { Text(it) } },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
 
 
             Text(
@@ -245,6 +274,8 @@ fun NuevaVisitaScreen(
                         onGuardar(
                             form.equipo,
                             form.estado,
+                            form.procedencia.trim(),
+                            form.telefono,
                             form.cargo,
                             formatearRut(form.rut),
                             form.observaciones.trim()
@@ -260,4 +291,3 @@ fun NuevaVisitaScreen(
         }
     }
 }
-

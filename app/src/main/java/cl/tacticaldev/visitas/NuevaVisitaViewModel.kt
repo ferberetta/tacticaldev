@@ -47,6 +47,8 @@ fun formatearRut(rut: String): String {
 data class NuevaVisitaState(
     val equipo: String = "",
     val estado: String = "",
+    val procedencia: String = "",
+    val telefono: String = "",
     val cargo: String = "",
     val rut: String = "",
     val observaciones: String = "",
@@ -58,6 +60,20 @@ data class NuevaVisitaState(
 
     val errorEstado: String?
         get() = if (intentoGuardar && estado.isBlank()) "Selecciona el estado" else null
+
+
+    val errorProcedencia: String?
+        get() = if (intentoGuardar && procedencia.trim().length < 3)
+            "Escribe la procedencia del lugar" else null
+
+
+    val errorTelefono: String?
+        get() = when {
+            !intentoGuardar -> null
+            telefono.isBlank() -> "Ingresa el teléfono de contacto"
+            telefono.length != 9 -> "Debe tener 9 dígitos"
+            else -> null
+        }
 
 
     val errorCargo: String?
@@ -81,6 +97,8 @@ data class NuevaVisitaState(
     val esValido: Boolean
         get() = equipo.isNotBlank() &&
                 estado.isNotBlank() &&
+                procedencia.trim().length >= 3 &&
+                telefono.length == 9 &&
                 cargo.isNotBlank() &&
                 rutValido(rut) &&
                 observaciones.trim().length >= 5
@@ -96,10 +114,15 @@ class NuevaVisitaViewModel : ViewModel() {
 
     fun cambiarEquipo(valor: String) = _state.update { it.copy(equipo = valor) }
     fun cambiarEstado(valor: String) = _state.update { it.copy(estado = valor) }
+    fun cambiarProcedencia(valor: String) = _state.update { it.copy(procedencia = valor) }
     fun cambiarCargo(valor: String) = _state.update { it.copy(cargo = valor) }
     fun cambiarObservaciones(valor: String) = _state.update { it.copy(observaciones = valor) }
 
 
+    fun cambiarTelefono(valor: String) {
+        val limpio = valor.filter { it.isDigit() }.take(9)
+        _state.update { it.copy(telefono = limpio) }
+    }
 
 
     fun cambiarRut(valor: String) {
@@ -117,4 +140,3 @@ class NuevaVisitaViewModel : ViewModel() {
         return _state.value.esValido
     }
 }
-
