@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.update
 data class AuthState(
     val modoRegistro: Boolean = false,
     val rut: String = "",
+    val nombre: String = "",
     val cargo: String = "",
     val password: String = "",
     val confirmar: String = "",
@@ -24,6 +25,9 @@ data class AuthState(
             !rutValido(rut) -> "RUT no válido"
             else -> null
         }
+
+    val errorNombre: String?
+        get() = if (intento && modoRegistro && nombre.isBlank()) "Ingresa tu nombre" else null
 
     val errorCargo: String?
         get() = if (intento && modoRegistro && cargo.isBlank()) "Selecciona tu cargo" else null
@@ -43,7 +47,7 @@ data class AuthState(
     val esValido: Boolean
         get() = rutValido(rut) &&
                 password.isNotBlank() &&
-                (!modoRegistro || (cargo.isNotBlank() && password.length >= 6 && confirmar == password))
+                (!modoRegistro || (nombre.isNotBlank() && cargo.isNotBlank() && password.length >= 6 && confirmar == password))
 }
 
 class AuthViewModel(app: Application) : AndroidViewModel(app) {
@@ -62,6 +66,7 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(rut = limpio, mensaje = null) }
     }
 
+    fun cambiarNombre(valor: String) = _state.update { it.copy(nombre = valor, mensaje = null) }
     fun cambiarCargo(valor: String) = _state.update { it.copy(cargo = valor) }
     fun cambiarPassword(valor: String) = _state.update { it.copy(password = valor, mensaje = null) }
     fun cambiarConfirmar(valor: String) = _state.update { it.copy(confirmar = valor) }
@@ -72,8 +77,8 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
         if (!s.esValido) return
 
         if (s.modoRegistro) {
-            if (repo.registrar(s.rut, s.cargo, s.password)) {
-                _state.update { it.copy(usuario = Usuario(s.rut, s.cargo)) }
+            if (repo.registrar(s.rut, s.cargo, s.nombre, s.password)) {
+                _state.update { it.copy(usuario = Usuario(s.rut, s.cargo, s.nombre)) }
             } else {
                 _state.update { it.copy(mensaje = "Ese RUT ya tiene una cuenta") }
             }
