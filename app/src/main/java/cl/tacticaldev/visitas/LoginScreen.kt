@@ -1,7 +1,5 @@
 package cl.tacticaldev.visitas
 
-package cl.tacticaldev.visitas
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -76,13 +74,14 @@ fun LoginScreen(
             )
 
             OutlinedTextField(
-                value = formatearRut(form.rut),
+                value = form.rut,
                 onValueChange = { viewModel.cambiarRut(it) },
                 label = { Text("RUT") },
                 placeholder = { Text("Ej. 12.345.678-5") },
                 leadingIcon = { Icon(Icons.Default.Badge, contentDescription = null) },
                 isError = form.errorRut != null,
                 supportingText = { form.errorRut?.let { Text(it) } },
+                visualTransformation = RutVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()

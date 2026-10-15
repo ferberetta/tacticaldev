@@ -49,6 +49,7 @@ fun AppNavigation(
     val equipos by equipoViewModel.equipos.collectAsState()
 
         NavHost(navController = navController, startDestination = Rutas.LOGIN) {
+
             composable(Rutas.LOGIN) {
                 LoginScreen(
                     onLoginExitoso = {

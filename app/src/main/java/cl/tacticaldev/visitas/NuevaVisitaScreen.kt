@@ -213,13 +213,14 @@ fun NuevaVisitaScreen(
             }
 
             OutlinedTextField(
-                value = formatearRut(form.rut),
+                value = form.rut,
                 onValueChange = { viewModel.cambiarRut(it) },
                 label = { Text("RUT") },
                 placeholder = { Text("Ej. 12.345.678-5") },
                 leadingIcon = { Icon(Icons.Default.Badge, contentDescription = null) },
                 isError = form.errorRut != null,
                 supportingText = { form.errorRut?.let { Text(it) } },
+                visualTransformation = RutVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
