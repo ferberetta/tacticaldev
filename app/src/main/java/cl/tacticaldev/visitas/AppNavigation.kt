@@ -53,7 +53,7 @@ fun AppNavigation(
             composable(Rutas.LOGIN) {
                 LoginScreen(
                     onLoginExitoso = {
-                        navController.navigate(Rutas.NUEVA_VISITA) {
+                        navController.navigate(Rutas.HISTORIAL) {
                             popUpTo(Rutas.LOGIN) { inclusive = true }
                         }
                     }

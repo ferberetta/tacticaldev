@@ -113,7 +113,7 @@ fun DetalleVisitaScreen(item: VisitaUi, onVolver: () -> Unit = {}) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(100.dp)
-                    .background(Color(0xFFCFD8DC), RoundedCornerShape(12.dp)),
+                    .background(Color.Transparent, RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 val lat = visita.latitud
