@@ -17,12 +17,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,8 +41,12 @@ import cl.tacticaldev.visitas.viewmodel.EquipoViewModel
 // Pantalla principal de Equipos (pantalla 02 del diseño).
 // Recibe el ViewModel como parámetro: la pantalla NO tiene lógica,
 // solo dibuja el estado y avisa al ViewModel cuando el usuario hace algo.
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EquiposScreen(viewModel: EquipoViewModel) {
+fun EquiposScreen(
+    viewModel: EquipoViewModel,
+    onVolver: (() -> Unit)? = null
+) {
 
     // collectAsState() "escucha" el StateFlow del ViewModel.
     // Cada vez que el valor cambia, Compose vuelve a dibujar la pantalla.
@@ -49,7 +57,23 @@ fun EquiposScreen(viewModel: EquipoViewModel) {
 
     // Scaffold nos entrega "padding" para que el contenido no quede
     // debajo de la barra de estado del celular.
-    Scaffold { padding ->
+    Scaffold(
+        topBar = {
+            if (onVolver != null) {
+                TopAppBar(
+                    title = { Text("Equipos", fontWeight = FontWeight.Bold) },
+                    navigationIcon = {
+                        IconButton(onClick = onVolver) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Volver"
+                            )
+                        }
+                    }
+                )
+            }
+        }
+    ) { padding ->
 
         Column(
             modifier = Modifier
@@ -58,14 +82,16 @@ fun EquiposScreen(viewModel: EquipoViewModel) {
                 .padding(16.dp)
         ) {
 
-            // ---------- TÍTULO ----------
-            Text(
-                text = "Equipos",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
+            if (onVolver == null) {
+                // ---------- TÍTULO ----------
+                Text(
+                    text = "Equipos",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
 
-            Spacer(modifier = Modifier.padding(top = 12.dp))
+                Spacer(modifier = Modifier.padding(top = 12.dp))
+            }
 
             // ---------- BARRA DE BÚSQUEDA ----------
             OutlinedTextField(
