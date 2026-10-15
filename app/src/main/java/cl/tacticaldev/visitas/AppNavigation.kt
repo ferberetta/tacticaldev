@@ -32,6 +32,8 @@ object Rutas {
     const val NUEVA_VISITA = "nueva_visita" // formulario de Benjamín
     const val EQUIPOS = "equipos"           // pantalla de Diego
 
+    const val LOGIN = "login"  //pantalla inicio sesion Jonathan
+
     fun detalle(id: Int) = "detalle/$id"
 }
 
@@ -46,7 +48,16 @@ fun AppNavigation(
     val todas by historialViewModel.todas.collectAsState()
     val equipos by equipoViewModel.equipos.collectAsState()
 
-    NavHost(navController = navController, startDestination = Rutas.SPLASH) {
+        NavHost(navController = navController, startDestination = Rutas.LOGIN) {
+            composable(Rutas.LOGIN) {
+                LoginScreen(
+                    onLoginExitoso = {
+                        navController.navigate(Rutas.NUEVA_VISITA) {
+                            popUpTo(Rutas.LOGIN) { inclusive = true }
+                        }
+                    }
+                )
+            }
         composable(Rutas.SPLASH) {
             SplashScreen(
                 onTerminar = {
