@@ -87,15 +87,27 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // El cargo solo se elige al crear la cuenta.
+            // El nombre y cargo solo se eligen al crear la cuenta.
             if (form.modoRegistro) {
+                OutlinedTextField(
+                    value = form.nombre,
+                    onValueChange = { viewModel.cambiarNombre(it) },
+                    label = { Text("Nombre completo") },
+                    placeholder = { Text("Ej. Juan Pérez") },
+                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                    isError = form.errorNombre != null,
+                    supportingText = { form.errorNombre?.let { Text(it) } },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
                 ExposedDropdownMenuBox(expanded = menuCargo, onExpandedChange = { menuCargo = it }) {
                     OutlinedTextField(
                         value = form.cargo,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Cargo (Vendedor o Técnico)") },
-                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                        leadingIcon = { Icon(Icons.Default.Badge, contentDescription = null) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = menuCargo) },
                         isError = form.errorCargo != null,
                         supportingText = { form.errorCargo?.let { Text(it) } },

@@ -6,14 +6,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import cl.tacticaldev.visitas.model.Visita
 import cl.tacticaldev.visitas.model.VisitaDao
 import cl.tacticaldev.visitas.ui.EquiposScreen
+import cl.tacticaldev.visitas.ui.HomeScreen
 import cl.tacticaldev.visitas.ui.SplashScreen
 import cl.tacticaldev.visitas.ui.historial.DetalleVisitaScreen
 import cl.tacticaldev.visitas.ui.historial.HistorialScreen
@@ -27,12 +28,12 @@ import java.util.Locale
 
 object Rutas {
     const val SPLASH = "splash"           // pantalla de bienvenida
+    const val LOGIN = "login"            // pantalla inicio sesion Jonathan
+    const val HOME = "home"              // pantalla principal con accesos y resumen
     const val HISTORIAL = "historial"
     const val DETALLE = "detalle/{visitaId}"
     const val NUEVA_VISITA = "nueva_visita" // formulario de Benjamín
     const val EQUIPOS = "equipos"           // pantalla de Diego
-
-    const val LOGIN = "login"  //pantalla inicio sesion Jonathan
 
     fun detalle(id: Int) = "detalle/$id"
 }
@@ -48,27 +49,51 @@ fun AppNavigation(
     val todas by historialViewModel.todas.collectAsState()
     val equipos by equipoViewModel.equipos.collectAsState()
 
-        NavHost(navController = navController, startDestination = Rutas.LOGIN) {
+    var usuarioLogueado by remember { mutableStateOf<Usuario?>(null) }
 
-            composable(Rutas.LOGIN) {
-                LoginScreen(
-                    onLoginExitoso = {
-                        navController.navigate(Rutas.HISTORIAL) {
-                            popUpTo(Rutas.LOGIN) { inclusive = true }
-                        }
+    NavHost(navController = navController, startDestination = Rutas.LOGIN) {
+
+        composable(Rutas.LOGIN) {
+            LoginScreen(
+                onLoginExitoso = { usuario ->
+                    usuarioLogueado = usuario
+                    navController.navigate(Rutas.HOME) {
+                        popUpTo(Rutas.LOGIN) { inclusive = true }
                     }
-                )
-            }
+                }
+            )
+        }
+
+        composable(Rutas.HOME) {
+            val pendientesCount = todas.count { !it.visita.sincronizada }
+            val equiposFallaCount = equipos.count { it.estado.equals("Con falla", ignoreCase = true) }
+
+            HomeScreen(
+                usuario = usuarioLogueado,
+                visitasPendientesCount = pendientesCount,
+                equiposConFallaCount = equiposFallaCount,
+                onRegistrarVisita = { navController.navigate(Rutas.NUEVA_VISITA) },
+                onVerEquipos = { navController.navigate(Rutas.EQUIPOS) },
+                onVerHistorial = { navController.navigate(Rutas.HISTORIAL) },
+                onCerrarSesion = {
+                    usuarioLogueado = null
+                    navController.navigate(Rutas.LOGIN) {
+                        popUpTo(Rutas.HOME) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(Rutas.SPLASH) {
             SplashScreen(
                 onTerminar = {
-                    // Pasa al historial y saca el splash de la pila (el botón atrás no vuelve a él).
-                    navController.navigate(Rutas.HISTORIAL) {
+                    navController.navigate(Rutas.LOGIN) {
                         popUpTo(Rutas.SPLASH) { inclusive = true }
                     }
                 }
             )
         }
+
         composable(Rutas.NUEVA_VISITA) {
             // Foto tomada con la cámara en este formulario (null = sin foto).
             var fotoUri by remember { mutableStateOf<Uri?>(null) }
@@ -103,7 +128,7 @@ fun AppNavigation(
                                 )
                             )
                         }
-                        // Deja ver la tarjeta verde y luego vuelve al historial,
+                        // Deja ver la tarjeta verde y luego vuelve a la pantalla anterior,
                         // donde la visita nueva ya aparece en la lista.
                         delay(1500)
                         navController.popBackStack()
@@ -111,12 +136,18 @@ fun AppNavigation(
                 }
             )
         }
+
         composable(Rutas.EQUIPOS) {
-            EquiposScreen(viewModel = equipoViewModel)
+            EquiposScreen(
+                viewModel = equipoViewModel,
+                onVolver = { navController.popBackStack() }
+            )
         }
+
         composable(Rutas.HISTORIAL) {
             HistorialScreen(
                 viewModel = historialViewModel,
+                onVolver = { navController.popBackStack() },
                 onNuevaVisita = { navController.navigate(Rutas.NUEVA_VISITA) },
                 onVerEquipos = { navController.navigate(Rutas.EQUIPOS) },
                 onVisitaClick = { item ->
@@ -124,6 +155,7 @@ fun AppNavigation(
                 }
             )
         }
+
         composable(Rutas.DETALLE) { entrada ->
             val id = entrada.arguments?.getString("visitaId")?.toIntOrNull()
             val item = todas.firstOrNull { it.visita.id == id }
