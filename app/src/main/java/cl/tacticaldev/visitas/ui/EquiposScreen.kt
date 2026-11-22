@@ -1,6 +1,7 @@
 package cl.tacticaldev.visitas.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,21 +16,33 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -54,6 +67,9 @@ fun EquiposScreen(
     val equipos by viewModel.equipos.collectAsState()
     val textoBusqueda by viewModel.textoBusqueda.collectAsState()
     val filtroActual by viewModel.filtroActual.collectAsState()
+    
+    var showDialog by remember { mutableStateOf(false) }
+    var equipoAEditar by remember { mutableStateOf<Equipo?>(null) }
 
     // Scaffold nos entrega "padding" para que el contenido no quede
     // debajo de la barra de estado del celular.
@@ -71,6 +87,14 @@ fun EquiposScreen(
                         }
                     }
                 )
+            }
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = {
+                equipoAEditar = null
+                showDialog = true
+            }) {
+                Icon(Icons.Default.Add, contentDescription = "Agregar Equipo")
             }
         }
     ) { padding ->
@@ -141,17 +165,140 @@ fun EquiposScreen(
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 // items recorre la lista y dibuja una tarjeta por cada equipo
                 items(equipos) { equipo ->
-                    TarjetaEquipo(equipo)
+                    TarjetaEquipo(
+                        equipo = equipo,
+                        onClick = {
+                            equipoAEditar = equipo
+                            showDialog = true
+                        }
+                    )
                 }
             }
         }
+        
+        if (showDialog) {
+            EquipoDialog(
+                equipoInicial = equipoAEditar,
+                onDismiss = { showDialog = false },
+                onConfirm = { nombre, ubicacion, estado ->
+                    if (equipoAEditar == null) {
+                        viewModel.crearEquipo(nombre, ubicacion, estado)
+                    } else {
+                        viewModel.actualizarEquipo(equipoAEditar!!.copy(nombre = nombre, ubicacion = ubicacion, estado = estado))
+                    }
+                    showDialog = false
+                },
+                onDelete = {
+                    equipoAEditar?.let {
+                        viewModel.eliminarEquipo(it.id)
+                    }
+                    showDialog = false
+                }
+            )
+        }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EquipoDialog(
+    equipoInicial: Equipo?,
+    onDismiss: () -> Unit,
+    onConfirm: (nombre: String, ubicacion: String, estado: String) -> Unit,
+    onDelete: () -> Unit
+) {
+    var nombre by remember { mutableStateOf(equipoInicial?.nombre ?: "") }
+    var ubicacion by remember { mutableStateOf(equipoInicial?.ubicacion ?: "") }
+    var estado by remember { mutableStateOf(equipoInicial?.estado ?: "") }
+    var menuEstado by remember { mutableStateOf(false) }
+
+    val estados = listOf("Operativo", "Con falla", "Sin conexión")
+    val esValido = nombre.isNotBlank() && ubicacion.isNotBlank() && estado.isNotBlank()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = if (equipoInicial == null) "Nuevo Equipo" else "Editar Equipo")
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = nombre,
+                    onValueChange = { nombre = it },
+                    label = { Text("Nombre") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = ubicacion,
+                    onValueChange = { ubicacion = it },
+                    label = { Text("Ubicación") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                ExposedDropdownMenuBox(
+                    expanded = menuEstado,
+                    onExpandedChange = { menuEstado = it }
+                ) {
+                    OutlinedTextField(
+                        value = estado,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Estado") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = menuEstado) },
+                        modifier = Modifier
+                            .menuAnchor(type = androidx.compose.material3.ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                            .fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = menuEstado,
+                        onDismissRequest = { menuEstado = false }
+                    ) {
+                        estados.forEach { opcion ->
+                            DropdownMenuItem(
+                                text = { Text(opcion) },
+                                onClick = {
+                                    estado = opcion
+                                    menuEstado = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(nombre, ubicacion, estado) },
+                enabled = esValido
+            ) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            Row {
+                if (equipoInicial != null) {
+                    TextButton(
+                        onClick = onDelete,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Eliminar")
+                    }
+                }
+                TextButton(onClick = onDismiss) {
+                    Text("Cancelar")
+                }
+            }
+        }
+    )
 }
 
 // Tarjeta de UN equipo. La separé en su propio Composable para que
 // el código quede ordenado y se pueda reutilizar.
 @Composable
-fun TarjetaEquipo(equipo: Equipo) {
+fun TarjetaEquipo(equipo: Equipo, onClick: () -> Unit) {
 
     // Elegimos el color según el estado (estructura de control: when).
     val colorEstado = when (equipo.estado) {
@@ -160,7 +307,11 @@ fun TarjetaEquipo(equipo: Equipo) {
         else -> Color.Gray                 // "Sin conexión" u otro
     }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
             // Nombre del equipo (en negrita)

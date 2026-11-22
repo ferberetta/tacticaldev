@@ -1,18 +1,19 @@
 package cl.tacticaldev.visitas
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import cl.tacticaldev.visitas.model.Visita
-import cl.tacticaldev.visitas.model.VisitaDao
 import cl.tacticaldev.visitas.ui.EquiposScreen
 import cl.tacticaldev.visitas.ui.HomeScreen
 import cl.tacticaldev.visitas.ui.SplashScreen
@@ -22,9 +23,6 @@ import cl.tacticaldev.visitas.viewmodel.EquipoViewModel
 import cl.tacticaldev.visitas.viewmodel.HistorialViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 object Rutas {
     const val SPLASH = "splash"           // pantalla de bienvenida
@@ -41,15 +39,32 @@ object Rutas {
 @Composable
 fun AppNavigation(
     equipoViewModel: EquipoViewModel,
-    historialViewModel: HistorialViewModel,
-    visitaDao: VisitaDao
+    historialViewModel: HistorialViewModel
 ) {
     val navController = rememberNavController()
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
     val todas by historialViewModel.todas.collectAsState()
     val equipos by equipoViewModel.equipos.collectAsState()
+    val errorEquipos by equipoViewModel.error.collectAsState()
+    val errorHistorial by historialViewModel.error.collectAsState()
 
     var usuarioLogueado by remember { mutableStateOf<Usuario?>(null) }
+
+    LaunchedEffect(errorEquipos) {
+        errorEquipos?.let { mensaje ->
+            Toast.makeText(context, mensaje, Toast.LENGTH_SHORT).show()
+            equipoViewModel.limpiarError()
+        }
+    }
+
+    LaunchedEffect(errorHistorial) {
+        errorHistorial?.let { mensaje ->
+            Toast.makeText(context, mensaje, Toast.LENGTH_SHORT).show()
+            historialViewModel.limpiarError()
+        }
+    }
 
     NavHost(navController = navController, startDestination = Rutas.LOGIN) {
 
@@ -108,26 +123,20 @@ fun AppNavigation(
                 onUbicacionObtenida = { lat, lon -> latitud = lat; longitud = lon },
                 onUbicacionEliminada = { latitud = null; longitud = null },
                 onGuardar = { equipo, estado, procedencia, telefono, cargo, rut, observaciones ->
-                    val equipoId = equipos.firstOrNull { it.nombre == equipo }?.id
                     val rutaFoto = fotoUri?.toString()
                     val lat = latitud
                     val lon = longitud
+                    historialViewModel.crearVisita(
+                        equipoNombre = equipo,
+                        cargo = cargo,
+                        rut = rut,
+                        observaciones = observaciones,
+                        rutaFoto = rutaFoto,
+                        latitud = lat,
+                        longitud = lon
+                    )
+                    Toast.makeText(context, "Visita guardada", Toast.LENGTH_SHORT).show()
                     scope.launch {
-                        if (equipoId != null) {
-                            val fecha = SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault())
-                                .format(Date())
-                            visitaDao.insertar(
-                                Visita(
-                                    equipoId = equipoId,
-                                    fecha = fecha,
-                                    observaciones = observaciones,
-                                    tecnico = "$cargo $rut",
-                                    rutaFoto = rutaFoto,
-                                    latitud = lat,
-                                    longitud = lon
-                                )
-                            )
-                        }
                         // Deja ver la tarjeta verde y luego vuelve a la pantalla anterior,
                         // donde la visita nueva ya aparece en la lista.
                         delay(1500)
@@ -159,10 +168,22 @@ fun AppNavigation(
         composable(Rutas.DETALLE) { entrada ->
             val id = entrada.arguments?.getString("visitaId")?.toIntOrNull()
             val item = todas.firstOrNull { it.visita.id == id }
+            val temperatura by historialViewModel.temperatura.collectAsState()
+            
             if (item != null) {
                 DetalleVisitaScreen(
                     item = item,
-                    onVolver = { navController.popBackStack() }
+                    temperatura = temperatura,
+                    onCargarTemperatura = { lat, lon -> historialViewModel.cargarTemperatura(lat, lon) },
+                    onVolver = { navController.popBackStack() },
+                    onCompletar = {
+                        historialViewModel.marcarCompletada(item.visita)
+                        navController.popBackStack()
+                    },
+                    onEliminar = {
+                        historialViewModel.eliminar(item.visita.id)
+                        navController.popBackStack()
+                    }
                 )
             }
         }

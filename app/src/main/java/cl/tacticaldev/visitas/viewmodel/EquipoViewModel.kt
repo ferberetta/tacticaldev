@@ -8,75 +8,113 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-// El ViewModel guarda el ESTADO de la pantalla y tiene la LÓGICA.
-// La pantalla (Composable) solo dibuja lo que el ViewModel le entrega.
-// Sobrevive a rotaciones de pantalla, por eso no perdemos la búsqueda.
+// ViewModel de equipos: obtiene la lista desde el servidor y la filtra en memoria.
 class EquipoViewModel(private val repository: EquipoRepository) : ViewModel() {
 
-    // Patrón de StateFlow: una variable privada que se puede MODIFICAR (_equipos)
-    // y otra pública que solo se puede LEER (equipos).
-    // Así la pantalla no puede cambiar la lista por su cuenta.
+    private var listaCompleta: List<Equipo> = emptyList()
 
-    // Lista de equipos que se muestra en pantalla
     private val _equipos = MutableStateFlow<List<Equipo>>(emptyList())
     val equipos: StateFlow<List<Equipo>> = _equipos
 
-    // Texto que el usuario escribió en la barra de búsqueda
     private val _textoBusqueda = MutableStateFlow("")
     val textoBusqueda: StateFlow<String> = _textoBusqueda
 
-    // Filtro seleccionado: "Todos", "Operativo" o "Con falla"
     private val _filtroActual = MutableStateFlow("Todos")
     val filtroActual: StateFlow<String> = _filtroActual
 
-    // init se ejecuta una vez, apenas se crea el ViewModel.
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error
+
     init {
-        // viewModelScope.launch = lanza una corrutina (trabajo en segundo plano)
+        cargarEquipos()
+    }
+
+    fun cambiarBusqueda(nuevoTexto: String) {
+        _textoBusqueda.value = nuevoTexto
+        aplicarFiltros()
+    }
+
+    fun cambiarFiltro(nuevoFiltro: String) {
+        _filtroActual.value = nuevoFiltro
+        aplicarFiltros()
+    }
+
+    fun cargarEquipos() {
         viewModelScope.launch {
-            repository.poblarDatosFicticios() // 1) llena la BD si está vacía
-            cargarEquipos()                   // 2) carga la lista inicial
+            try {
+                _error.value = null
+                listaCompleta = repository.obtenerTodos()
+                if (listaCompleta.isEmpty()) {
+                    listaCompleta = listOf(
+                        Equipo(id = 1, nombre = "Refrigeradores", ubicacion = "Sin asignar", estado = "Operativo"),
+                        Equipo(id = 2, nombre = "Conservadoras", ubicacion = "Sin asignar", estado = "Operativo")
+                    )
+                }
+                aplicarFiltros()
+            } catch (e: Exception) {
+                listaCompleta = listOf(
+                    Equipo(id = 1, nombre = "Refrigeradores", ubicacion = "Sin asignar", estado = "Operativo"),
+                    Equipo(id = 2, nombre = "Conservadoras", ubicacion = "Sin asignar", estado = "Operativo")
+                )
+                _error.value = "Sin conexión al servidor. Mostrando equipos por defecto."
+                aplicarFiltros()
+            }
         }
     }
 
-    // Se llama cada vez que el usuario escribe una letra en el buscador.
-    fun cambiarBusqueda(nuevoTexto: String) {
-        _textoBusqueda.value = nuevoTexto
-        cargarEquipos()
-    }
-
-    // Se llama cuando el usuario toca un chip (Todos / Operativos / Con falla).
-    fun cambiarFiltro(nuevoFiltro: String) {
-        _filtroActual.value = nuevoFiltro
-        cargarEquipos()
-    }
-
-    // Aquí está TODA la lógica de búsqueda + filtro, en un solo lugar.
-    private fun cargarEquipos() {
+    fun crearEquipo(nombre: String, ubicacion: String, estado: String) {
         viewModelScope.launch {
-            val texto = _textoBusqueda.value
-            val filtro = _filtroActual.value
-
-            val lista: List<Equipo>
-
-            if (texto.isNotBlank()) {
-                // Hay texto escrito: primero buscamos por texto en la BD...
-                val resultadoBusqueda = repository.buscarPorTexto(texto)
-                // ...y si además hay un filtro de estado, filtramos esa lista.
-                if (filtro != "Todos") {
-                    lista = resultadoBusqueda.filter { it.estado == filtro }
-                } else {
-                    lista = resultadoBusqueda
-                }
-            } else if (filtro != "Todos") {
-                // No hay texto, pero sí filtro: pedimos solo ese estado.
-                lista = repository.filtrarPorEstado(filtro)
-            } else {
-                // Sin texto y sin filtro: mostramos todo.
-                lista = repository.obtenerTodos()
+            try {
+                _error.value = null
+                repository.crear(Equipo(nombre = nombre, ubicacion = ubicacion, estado = estado))
+                listaCompleta = repository.obtenerTodos()
+                aplicarFiltros()
+            } catch (e: Exception) {
+                _error.value = "No se pudo conectar con el servidor"
             }
+        }
+    }
 
-            // Al cambiar este valor, Compose se entera y redibuja la lista sola.
-            _equipos.value = lista
+    fun actualizarEquipo(equipo: Equipo) {
+        viewModelScope.launch {
+            try {
+                _error.value = null
+                repository.actualizar(equipo)
+                listaCompleta = repository.obtenerTodos()
+                aplicarFiltros()
+            } catch (e: Exception) {
+                _error.value = "No se pudo conectar con el servidor"
+            }
+        }
+    }
+
+    fun eliminarEquipo(id: Int) {
+        viewModelScope.launch {
+            try {
+                _error.value = null
+                repository.eliminar(id)
+                listaCompleta = repository.obtenerTodos()
+                aplicarFiltros()
+            } catch (e: Exception) {
+                _error.value = "No se pudo conectar con el servidor"
+            }
+        }
+    }
+
+    fun limpiarError() {
+        _error.value = null
+    }
+
+    private fun aplicarFiltros() {
+        val texto = _textoBusqueda.value.trim()
+        val filtro = _filtroActual.value
+
+        _equipos.value = listaCompleta.filter { equipo ->
+            val coincideTexto = texto.isEmpty() ||
+                equipo.nombre.contains(texto, ignoreCase = true) ||
+                equipo.ubicacion.contains(texto, ignoreCase = true)
+            val coincideEstado = filtro == "Todos" || equipo.estado == filtro
+            coincideTexto && coincideEstado
         }
     }
 }
