@@ -1,7 +1,6 @@
 package cl.tacticaldev.visitas.ui.historial
 
 import android.graphics.BitmapFactory
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +19,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -28,8 +29,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,16 +47,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import cl.tacticaldev.visitas.model.Visita
 import cl.tacticaldev.visitas.ui.components.abrirEnGoogleMaps
 import cl.tacticaldev.visitas.viewmodel.VisitaUi
-import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetalleVisitaScreen(item: VisitaUi, onVolver: () -> Unit = {}) {
+fun DetalleVisitaScreen(
+    item: VisitaUi,
+    temperatura: Double?,
+    onCargarTemperatura: (Double?, Double?) -> Unit = { _, _ -> },
+    onVolver: () -> Unit = {},
+    onCompletar: () -> Unit = {},
+    onEliminar: () -> Unit = {}
+) {
     val visita = item.visita
     val context = LocalContext.current
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(visita.id) {
+        onCargarTemperatura(visita.latitud, visita.longitud)
+    }
+
     // Carga la foto guardada en la visita (reducida para no gastar memoria).
     val foto = remember(visita.rutaFoto) {
         visita.rutaFoto?.let { ruta ->
@@ -62,6 +81,31 @@ fun DetalleVisitaScreen(item: VisitaUi, onVolver: () -> Unit = {}) {
             }.getOrNull()
         }
     }
+    
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Eliminar visita") },
+            text = { Text("¿Estás seguro de que deseas eliminar esta visita? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteDialog = false
+                        onEliminar()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -102,7 +146,9 @@ fun DetalleVisitaScreen(item: VisitaUi, onVolver: () -> Unit = {}) {
                         bitmap = foto.asImageBitmap(),
                         contentDescription = "Foto de la visita",
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp))
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(12.dp))
                     )
                 } else {
                     Text(if (visita.rutaFoto == null) "Sin foto" else "No se pudo cargar la foto")
@@ -130,8 +176,47 @@ fun DetalleVisitaScreen(item: VisitaUi, onVolver: () -> Unit = {}) {
                     }
                 }
             }
+            
+            Text("Clima en el lugar de la visita", fontWeight = FontWeight.Bold)
+            androidx.compose.material3.Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = androidx.compose.material3.CardDefaults.cardColors(
+                    containerColor = Color(0xFFE3F2FD)
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    val lat = visita.latitud
+                    val lon = visita.longitud
+                    if (lat == null || lon == null) {
+                        Text("Sin ubicación registrada", color = Color.Gray)
+                    } else if (temperatura != null) {
+                        Text("Temperatura actual: $temperatura °C", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    } else {
+                        Text("No disponible", color = Color.Gray)
+                    }
+                }
+            }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(16.dp))
+
+            if (!visita.sincronizada) {
+                Button(
+                    onClick = onCompletar,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Marcar como completada")
+                }
+            }
+            
+            Button(
+                onClick = { showDeleteDialog = true },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text("Eliminar visita")
+            }
+            
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
@@ -153,7 +238,8 @@ fun DetalleVisitaPreview() {
                 Visita(1, 1, "12-08-2026 10:24", "Temperatura estable", "Juan Perez", true, null, -33.4901, -70.7336),
                 "Vitrina Freezer A-102",
                 "Minimarket Maipú"
-            )
+            ),
+            temperatura = 24.5
         )
     }
 }
