@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "cl.tacticaldev.visitas"
-        minSdk = 25
+        minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -20,8 +20,20 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("../entrega/tacticaldev.jks")
+            storePassword = "tactical123"
+            keyAlias = "tacticaldev"
+            keyPassword = "tactical123"
+            enableV1Signing = true
+            enableV2Signing = true
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             optimization {
                 enable = false
             }
