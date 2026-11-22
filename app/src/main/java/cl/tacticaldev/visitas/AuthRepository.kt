@@ -1,7 +1,7 @@
 package cl.tacticaldev.visitas
 
-import android.content.Context
-import android.util.Base64
+import android.content.SharedPreferences
+import java.util.Base64
 import java.security.MessageDigest
 import java.security.SecureRandom
 
@@ -11,10 +11,7 @@ data class Usuario(
     val nombre: String = ""
 )
 
-class AuthRepository(context: Context) {
-
-    private val prefs = context.applicationContext
-        .getSharedPreferences("usuarios", Context.MODE_PRIVATE)
+class AuthRepository(private val prefs: SharedPreferences) {
 
     // Guarda "cargo|nombre|sal|hash" bajo la clave "user_<rut>".
     fun registrar(rut: String, cargo: String, nombre: String, password: String): Boolean {
@@ -58,11 +55,11 @@ class AuthRepository(context: Context) {
     private fun nuevaSal(): String {
         val bytes = ByteArray(16)
         SecureRandom().nextBytes(bytes)
-        return Base64.encodeToString(bytes, Base64.NO_WRAP)
+        return Base64.getEncoder().encodeToString(bytes)
     }
 
     private fun hash(password: String, sal: String): String {
         val bytes = MessageDigest.getInstance("SHA-256").digest((sal + password).toByteArray())
-        return Base64.encodeToString(bytes, Base64.NO_WRAP)
+        return Base64.getEncoder().encodeToString(bytes)
     }
 }

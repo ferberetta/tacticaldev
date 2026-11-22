@@ -44,7 +44,7 @@ class NuevaVisitaViewModelTest {
 
     @Test
     fun `cambiarRut permite k y numeros y pasa a mayusculas limitando a 9`() {
-        viewModel.cambiarRut("1111111k2")
-        assertEquals("1111111K", viewModel.state.value.rut)
+        viewModel.cambiarRut("12345670k2")
+        assertEquals("12345670K", viewModel.state.value.rut)
     }
 }

@@ -14,8 +14,7 @@ class ValidacionesTest {
 
     @Test
     fun `rutValido con digito K devuelve true`() {
-        // 1111111-K -> 1111111K
-        assertTrue(rutValido("1111111K"))
+        assertTrue(rutValido("12345670K"))
     }
 
     @Test
@@ -36,6 +35,6 @@ class ValidacionesTest {
     @Test
     fun `formatearRut aplica puntos y guion correctamente`() {
         assertEquals("12.345.678-5", formatearRut("123456785"))
-        assertEquals("1.111.111-K", formatearRut("1111111K"))
+        assertEquals("12.345.670-K", formatearRut("12345670K"))
     }
 }
