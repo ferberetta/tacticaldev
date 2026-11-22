@@ -1,7 +1,7 @@
 package cl.tacticaldev.visitas
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -50,9 +50,8 @@ data class AuthState(
                 (!modoRegistro || (nombre.isNotBlank() && cargo.isNotBlank() && password.length >= 6 && confirmar == password))
 }
 
-class AuthViewModel(app: Application) : AndroidViewModel(app) {
+class AuthViewModel(private val repo: AuthRepository) : ViewModel() {
 
-    private val repo = AuthRepository(app)
     private val _state = MutableStateFlow(AuthState())
     val state: StateFlow<AuthState> = _state.asStateFlow()
 
@@ -90,5 +89,12 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
                 _state.update { it.copy(mensaje = "RUT o contraseña incorrectos") }
             }
         }
+    }
+}
+
+class AuthViewModelFactory(private val repo: AuthRepository) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return AuthViewModel(repo) as T
     }
 }

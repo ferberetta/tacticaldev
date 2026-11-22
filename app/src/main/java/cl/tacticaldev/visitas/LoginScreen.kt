@@ -39,14 +39,21 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import android.content.Context
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
-    viewModel: AuthViewModel = viewModel(),
     onLoginExitoso: (Usuario) -> Unit
 ) {
+    val context = LocalContext.current
+    val prefs = context.getSharedPreferences("usuarios", Context.MODE_PRIVATE)
+    val viewModel: AuthViewModel = viewModel(
+        factory = AuthViewModelFactory(AuthRepository(prefs))
+    )
+
     val form by viewModel.state.collectAsState()
     val cargos = listOf("Técnico", "Vendedor")
 
