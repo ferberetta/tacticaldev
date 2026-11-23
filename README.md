@@ -66,8 +66,10 @@ Los archivos finales correspondientes a la entrega de la aplicación se encuentr
 ![Cobertura de pruebas](docs/capturas/cobertura.png)
 
 ## Gestión del proyecto
-- **Trello:** ENLACE_TRELLO_AQUI
-- **GitHub:** El flujo de trabajo incluyó el uso de ramas separadas por integrante (usando el formato `feature/...`), y la integración al tronco `main` mediante la aprobación de Pull Requests.
+
+- **Tablero Kanban:** GitHub Projects, "TacticalDEV Visitas - Tablero": [PEGAR AQUÍ LA URL DEL TABLERO]
+- **Issues:** cada tarea está registrada como issue y asignada a su responsable.
+- **GitHub:** ramas separadas por integrante (formato `feature/...`) e integración a `main` mediante Pull Requests.
 
 ## Limitaciones conocidas
 - La foto tomada solo guarda la ruta local del archivo dentro del dispositivo, no la imagen real en un servidor externo.
