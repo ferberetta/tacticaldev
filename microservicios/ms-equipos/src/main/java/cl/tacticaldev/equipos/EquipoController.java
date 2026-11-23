@@ -9,38 +9,35 @@ import java.util.List;
 @RequestMapping("/api/equipos")
 public class EquipoController {
 
-    private final EquipoRepository repository;
+    private final EquipoService service;
 
-    public EquipoController(EquipoRepository repository) {
-        this.repository = repository;
+    public EquipoController(EquipoService service) {
+        this.service = service;
     }
 
     @GetMapping
     public List<Equipo> obtenerTodos() {
-        return repository.findAll();
+        return service.obtenerTodos();
     }
 
     @PostMapping
     public Equipo crear(@RequestBody Equipo equipo) {
-        equipo.setId(null);
-        return repository.save(equipo);
+        return service.crear(equipo);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Equipo> actualizar(@PathVariable Long id, @RequestBody Equipo equipo) {
-        if (!repository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        equipo.setId(id);
-        return ResponseEntity.ok(repository.save(equipo));
+    public ResponseEntity<Equipo> actualizar(
+            @PathVariable Long id,
+            @RequestBody Equipo equipo) {
+        return service.actualizar(id, equipo)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        if (!repository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        repository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        return service.eliminar(id)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 }
