@@ -67,7 +67,7 @@ Los archivos finales correspondientes a la entrega de la aplicación se encuentr
 
 ## Gestión del proyecto
 
-- **Tablero Kanban:** GitHub Projects, "TacticalDEV Visitas - Tablero": [PEGAR AQUÍ LA URL DEL TABLERO]
+- **Tablero Kanban:** GitHub Projects, "TacticalDEV Visitas - Tablero": https://github.com/users/ferberetta/projects/2
 - **Issues:** cada tarea está registrada como issue y asignada a su responsable.
 - **GitHub:** ramas separadas por integrante (formato `feature/...`) e integración a `main` mediante Pull Requests.
 
