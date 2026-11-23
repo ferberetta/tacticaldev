@@ -5,9 +5,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import cl.tacticaldev.visitas.model.Equipo
 import cl.tacticaldev.visitas.model.Visita
+import cl.tacticaldev.visitas.repository.ClimaRepository
 import cl.tacticaldev.visitas.repository.EquipoRepository
 import cl.tacticaldev.visitas.repository.VisitaRepository
-import cl.tacticaldev.visitas.repository.ClimaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -90,42 +90,53 @@ class HistorialViewModel(
         viewModelScope.launch {
             try {
                 _error.value = null
-                if (equiposCargados.isEmpty()) {
-                    try {
-                        equiposCargados = equipoRepository.obtenerTodos()
-                    } catch (e: Exception) {
+                try {
+                    val equiposActuales = equipoRepository.obtenerTodos()
+                    if (equiposActuales.isNotEmpty()) {
+                        equiposCargados = equiposActuales
+                    }
+                } catch (e: Exception) {
+                    if (equiposCargados.isEmpty()) {
                         equiposCargados = listOf(
                             Equipo(id = 1, nombre = "Refrigeradores", ubicacion = "Sin asignar", estado = "Operativo"),
                             Equipo(id = 2, nombre = "Conservadoras", ubicacion = "Sin asignar", estado = "Operativo")
                         )
                     }
                 }
-                val equipo = equiposCargados.firstOrNull { it.nombre == equipoNombre }
-                if (equipo != null) {
-                    val fecha = SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault())
-                        .format(Date())
-                    val nuevaVisita = Visita(
-                        id = if (visitasEnMemoria.isEmpty()) 1 else visitasEnMemoria.maxOf { it.id } + 1,
-                        equipoId = equipo.id,
-                        fecha = fecha,
-                        observaciones = observaciones,
-                        tecnico = "$cargo $rut",
-                        sincronizada = false,
-                        rutaFoto = rutaFoto,
-                        latitud = latitud,
-                        longitud = longitud
-                    )
-                    
-                    try {
-                        val guardada = visitaRepository.crear(nuevaVisita)
-                        visitasEnMemoria.add(guardada)
-                    } catch (e: Exception) {
-                        visitasEnMemoria.add(nuevaVisita)
-                        _error.value = "Guardado localmente. Sin conexión al servidor."
-                    }
-                    
-                    cargarDesdeServidor()
+
+                val equipo = equiposCargados.firstOrNull {
+                    it.nombre.equals(equipoNombre, ignoreCase = true)
                 }
+
+                if (equipo == null) {
+                    _error.value = "No se encontró el equipo seleccionado"
+                    return@launch
+                }
+
+                val fecha = SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault())
+                    .format(Date())
+                val nuevaVisita = Visita(
+                    id = 0,
+                    equipoId = equipo.id,
+                    fecha = fecha,
+                    observaciones = observaciones,
+                    tecnico = "$cargo $rut",
+                    sincronizada = false,
+                    rutaFoto = rutaFoto,
+                    latitud = latitud,
+                    longitud = longitud
+                )
+
+                try {
+                    val guardada = visitaRepository.crear(nuevaVisita)
+                    visitasEnMemoria.add(guardada)
+                } catch (e: Exception) {
+                    val idLocal = if (visitasEnMemoria.isEmpty()) 1 else visitasEnMemoria.maxOf { it.id } + 1
+                    visitasEnMemoria.add(nuevaVisita.copy(id = idLocal))
+                    _error.value = "Guardado localmente. Sin conexión al servidor."
+                }
+
+                cargarDesdeServidor()
             } catch (e: Exception) {
                 _error.value = "Error al crear la visita"
             }
@@ -191,7 +202,7 @@ class HistorialViewModel(
         }
 
         val equiposPorId = equiposCargados.associateBy { it.id }
-        
+
         var visitas = emptyList<Visita>()
         try {
             visitas = visitaRepository.obtenerTodas()
