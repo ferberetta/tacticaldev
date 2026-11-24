@@ -1,7 +1,7 @@
 package cl.tacticaldev.visitas
 
 import android.content.SharedPreferences
-import java.util.Base64
+import android.util.Base64
 import java.security.MessageDigest
 import java.security.SecureRandom
 
@@ -55,11 +55,11 @@ class AuthRepository(private val prefs: SharedPreferences) {
     private fun nuevaSal(): String {
         val bytes = ByteArray(16)
         SecureRandom().nextBytes(bytes)
-        return Base64.getEncoder().encodeToString(bytes)
+        return Base64.encodeToString(bytes, Base64.NO_WRAP)
     }
 
     private fun hash(password: String, sal: String): String {
         val bytes = MessageDigest.getInstance("SHA-256").digest((sal + password).toByteArray())
-        return Base64.getEncoder().encodeToString(bytes)
+        return Base64.encodeToString(bytes, Base64.NO_WRAP)
     }
 }
