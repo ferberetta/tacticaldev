@@ -1,7 +1,6 @@
 package cl.tacticaldev.usuarios.dto;
 
 import cl.tacticaldev.usuarios.model.Rol;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -21,11 +20,6 @@ public class UsuarioRequest {
     private String rut;
 
     @NotBlank
-    @Email
-    @Size(max = 150)
-    private String correo;
-
-    @NotBlank
     @Size(min = 8, max = 72)
     private String password;
 
@@ -40,9 +34,6 @@ public class UsuarioRequest {
 
     public String getRut() { return rut; }
     public void setRut(String rut) { this.rut = rut; }
-
-    public String getCorreo() { return correo; }
-    public void setCorreo(String correo) { this.correo = correo; }
 
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }

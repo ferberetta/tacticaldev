@@ -31,18 +31,13 @@ public class UsuarioService {
 
         if (request.getRol() == Rol.ADMINISTRADOR) {
             throw new IllegalArgumentException(
-                    "No está permitido registrar administradores públicamente");
+                    "No esta permitido registrar administradores publicamente");
         }
 
         String rut = request.getRut().trim().toUpperCase();
-        String correo = request.getCorreo().trim().toLowerCase();
 
         if (usuarioRepository.existsByRut(rut)) {
-            throw new IllegalArgumentException("El RUT ya está registrado");
-        }
-
-        if (usuarioRepository.existsByCorreo(correo)) {
-            throw new IllegalArgumentException("El correo ya está registrado");
+            throw new IllegalArgumentException("El RUT ya esta registrado");
         }
 
         Usuario usuario = new Usuario();
@@ -50,7 +45,6 @@ public class UsuarioService {
         usuario.setNombre(request.getNombre().trim());
         usuario.setApellido(request.getApellido().trim());
         usuario.setRut(rut);
-        usuario.setCorreo(correo);
         usuario.setPassword(passwordEncoder.encode(request.getPassword()));
         usuario.setRol(request.getRol());
         usuario.setActivo(true);
@@ -76,31 +70,27 @@ public class UsuarioService {
         Usuario usuario = buscarUsuario(id);
 
         String rut = request.getRut().trim().toUpperCase();
-        String correo = request.getCorreo().trim().toLowerCase();
 
         usuarioRepository.findByRut(rut)
                 .filter(existente -> !existente.getId().equals(id))
                 .ifPresent(existente -> {
-                    throw new IllegalArgumentException("El RUT ya pertenece a otro usuario");
-                });
-
-        usuarioRepository.findByCorreo(correo)
-                .filter(existente -> !existente.getId().equals(id))
-                .ifPresent(existente -> {
-                    throw new IllegalArgumentException("El correo ya pertenece a otro usuario");
+                    throw new IllegalArgumentException(
+                            "El RUT ya pertenece a otro usuario");
                 });
 
         usuario.setNombre(request.getNombre().trim());
         usuario.setApellido(request.getApellido().trim());
         usuario.setRut(rut);
-        usuario.setCorreo(correo);
 
-        if (request.getPassword() != null && !request.getPassword().isBlank()) {
-            usuario.setPassword(passwordEncoder.encode(request.getPassword()));
+        if (request.getPassword() != null
+                && !request.getPassword().isBlank()) {
+            usuario.setPassword(
+                    passwordEncoder.encode(request.getPassword()));
         }
 
         if (request.getRol() == Rol.ADMINISTRADOR) {
-            throw new IllegalArgumentException("No está permitido asignar el rol administrador mediante esta operación");
+            throw new IllegalArgumentException(
+                    "No esta permitido asignar el rol administrador mediante esta operacion");
         }
 
         if (request.getRol() != null) {
@@ -121,17 +111,18 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public UsuarioResponse iniciarSesion(LoginRequest request) {
 
-        String correo = request.getCorreo().trim().toLowerCase();
+        String rut = request.getRut().trim().toUpperCase();
 
-        Usuario usuario = usuarioRepository.findByCorreo(correo)
+        Usuario usuario = usuarioRepository.findByRut(rut)
                 .orElseThrow(() ->
                         new IllegalArgumentException("Credenciales incorrectas"));
 
         if (!Boolean.TRUE.equals(usuario.getActivo())) {
-            throw new IllegalArgumentException("La cuenta está desactivada");
+            throw new IllegalArgumentException("La cuenta esta desactivada");
         }
 
-        if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
+        if (!passwordEncoder.matches(
+                request.getPassword(), usuario.getPassword())) {
             throw new IllegalArgumentException("Credenciales incorrectas");
         }
 
@@ -150,7 +141,6 @@ public class UsuarioService {
                 usuario.getNombre(),
                 usuario.getApellido(),
                 usuario.getRut(),
-                usuario.getCorreo(),
                 usuario.getRol(),
                 usuario.getActivo(),
                 usuario.getFechaCreacion()

@@ -20,7 +20,7 @@ public class Usuario {
     @Column(nullable = false, unique = true, length = 12)
     private String rut;
 
-    @Column(nullable = false, unique = true, length = 150)
+    @Column(nullable = true, unique = true, length = 150)
     private String correo;
 
     @Column(nullable = false)
