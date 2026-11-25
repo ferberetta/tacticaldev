@@ -4,7 +4,6 @@ package cl.tacticaldev.visitas
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,12 +32,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import cl.tacticaldev.visitas.network.ApiClient
+import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,7 +51,6 @@ fun GestionUsuariosScreen(
 ) {
     val context = LocalContext.current
 
-    // Se utiliza el mismo almacenamiento que LoginScreen.
     val prefs = remember(context) {
         context.getSharedPreferences(
             "usuarios",
@@ -56,8 +59,10 @@ fun GestionUsuariosScreen(
     }
 
     val authRepository = remember(prefs) {
-        AuthRepository(prefs)
+        AuthRepository(prefs, ApiClient.usuariosApi)
     }
+
+    val scope = rememberCoroutineScope()
 
     var nombre by remember { mutableStateOf("") }
     var rut by remember { mutableStateOf("") }
@@ -67,6 +72,7 @@ fun GestionUsuariosScreen(
     var menuAbierto by remember { mutableStateOf(false) }
     var mensaje by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf(false) }
+    var cargando by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -85,7 +91,6 @@ fun GestionUsuariosScreen(
             )
         }
     ) { padding ->
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -94,7 +99,6 @@ fun GestionUsuariosScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-
             Text(
                 text = "Registrar nuevo usuario",
                 style = MaterialTheme.typography.headlineSmall,
@@ -223,11 +227,19 @@ fun GestionUsuariosScreen(
             Button(
                 onClick = {
                     val rutLimpio = rut.trim()
+                    val partesNombre = nombre.trim()
+                        .split(Regex("\\s+"), limit = 2)
 
                     when {
                         nombre.isBlank() -> {
                             error = true
                             mensaje = "Ingresa el nombre del usuario"
+                        }
+
+                        partesNombre.size < 2 ||
+                                partesNombre[1].isBlank() -> {
+                            error = true
+                            mensaje = "Ingresa nombre y apellido"
                         }
 
                         rutLimpio.isBlank() -> {
@@ -240,34 +252,60 @@ fun GestionUsuariosScreen(
                             mensaje = "El RUT ingresado no es válido"
                         }
 
-                        password.length < 4 -> {
+                        password.length < 8 -> {
                             error = true
-                            mensaje = "La contraseña debe tener al menos 4 caracteres"
+                            mensaje = "La contraseña debe tener al menos 8 caracteres"
                         }
 
                         else -> {
-                            val registrado = authRepository.registrar(
-                                rut = rutLimpio,
-                                cargo = cargo,
-                                nombre = nombre.trim(),
-                                password = password
-                            )
+                            scope.launch {
+                                cargando = true
 
-                            if (registrado) {
-                                error = false
-                                mensaje = "Usuario registrado correctamente"
+                                try {
+                                    authRepository.registrar(
+                                        nombre = partesNombre[0],
+                                        apellido = partesNombre[1],
+                                        rut = rutLimpio,
+                                        password = password,
+                                        cargo = cargo
+                                    )
 
-                                nombre = ""
-                                rut = ""
-                                password = ""
-                                cargo = "Técnico"
-                            } else {
-                                error = true
-                                mensaje = "Ya existe un usuario con ese RUT"
+                                    error = false
+                                    mensaje = "Usuario registrado correctamente en el servidor"
+
+                                    nombre = ""
+                                    rut = ""
+                                    password = ""
+                                    cargo = "Técnico"
+
+                                } catch (e: HttpException) {
+                                    error = true
+
+                                    val detalle = e.response()
+                                        ?.errorBody()
+                                        ?.string()
+
+                                    mensaje = "Error HTTP ${e.code()}: ${
+                                        detalle ?: "Sin detalles del servidor"
+                                    }"
+
+                                } catch (e: IOException) {
+                                    error = true
+                                    mensaje = "No se pudo conectar con el servidor"
+
+                                } catch (e: Exception) {
+                                    error = true
+                                    mensaje = e.message
+                                        ?: "Error al registrar usuario"
+
+                                } finally {
+                                    cargando = false
+                                }
                             }
                         }
                     }
                 },
+                enabled = !cargando,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(
@@ -275,9 +313,14 @@ fun GestionUsuariosScreen(
                     contentDescription = null
                 )
 
-                Spacer(modifier = Modifier.padding(horizontal = 4.dp))
+                Spacer(
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
 
-                Text("Registrar usuario")
+                Text(
+                    if (cargando) "Registrando..."
+                    else "Registrar usuario"
+                )
             }
 
             Card(

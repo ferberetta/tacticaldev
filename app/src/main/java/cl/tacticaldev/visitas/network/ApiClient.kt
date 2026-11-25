@@ -10,6 +10,7 @@ object ApiClient {
     private const val URL_EQUIPOS = "https://ms-equipos-jqhr.onrender.com/"
     private const val URL_VISITAS = "https://ms-visitas.onrender.com/"
     private const val URL_CLIMA = "https://api.open-meteo.com/"
+    private const val URL_USUARIOS = "https://ms-usuarios-5u1j.onrender.com/"
 
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(60, TimeUnit.SECONDS)
@@ -38,8 +39,18 @@ object ApiClient {
     val climaApi: ClimaApi by lazy {
         Retrofit.Builder()
             .baseUrl(URL_CLIMA)
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ClimaApi::class.java)
+    }
+
+    val usuariosApi: UsuariosApi by lazy {
+        Retrofit.Builder()
+            .baseUrl(URL_USUARIOS)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(UsuariosApi::class.java)
     }
 }

@@ -1,21 +1,24 @@
-
 package cl.tacticaldev.visitas
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
 
 data class AuthState(
     val rut: String = "",
     val password: String = "",
     val intento: Boolean = false,
     val mensaje: String? = null,
-    val usuario: Usuario? = null
+    val usuario: Usuario? = null,
+    val cargando: Boolean = false
 ) {
-
     val errorRut: String?
         get() = when {
             !intento -> null
@@ -27,9 +30,7 @@ data class AuthState(
     val errorPassword: String?
         get() = if (intento && password.isBlank()) {
             "Ingresa tu contraseña"
-        } else {
-            null
-        }
+        } else null
 
     val esValido: Boolean
         get() = rutValido(rut) && password.isNotBlank()
@@ -48,36 +49,49 @@ class AuthViewModel(
             .uppercase()
             .take(9)
 
-        _state.update {
-            it.copy(rut = limpio, mensaje = null)
-        }
+        _state.update { it.copy(rut = limpio, mensaje = null) }
     }
 
     fun cambiarPassword(valor: String) {
-        _state.update {
-            it.copy(password = valor, mensaje = null)
-        }
+        _state.update { it.copy(password = valor, mensaje = null) }
     }
 
     fun enviar() {
-
         _state.update {
             it.copy(intento = true, mensaje = null)
         }
 
         val s = _state.value
+        if (!s.esValido || s.cargando) return
 
-        if (!s.esValido) return
+        viewModelScope.launch {
+            _state.update { it.copy(cargando = true) }
 
-        val usuario = repo.iniciarSesion(s.rut, s.password)
+            try {
+                val usuario = repo.iniciarSesion(s.rut, s.password)
 
-        if (usuario != null) {
-            _state.update {
-                it.copy(usuario = usuario)
-            }
-        } else {
-            _state.update {
-                it.copy(mensaje = "RUT o contraseña incorrectos")
+                _state.update {
+                    it.copy(
+                        usuario = usuario,
+                        mensaje = if (usuario == null)
+                            "RUT o contraseña incorrectos"
+                        else null
+                    )
+                }
+            } catch (e: HttpException) {
+                _state.update {
+                    it.copy(mensaje = "RUT o contraseña incorrectos")
+                }
+            } catch (e: IOException) {
+                _state.update {
+                    it.copy(mensaje = "No se pudo conectar con el servidor. Intenta nuevamente.")
+                }
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(mensaje = e.message ?: "Error al iniciar sesión")
+                }
+            } finally {
+                _state.update { it.copy(cargando = false) }
             }
         }
     }

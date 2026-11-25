@@ -19,6 +19,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import retrofit2.HttpException
 
 enum class FiltroHistorial {
     TODAS,
@@ -87,7 +88,7 @@ class HistorialViewModel(
                 _error.value = null
                 cargarDesdeServidor()
             } catch (e: Exception) {
-                _error.value = "No se pudo conectar con el servidor"
+                _error.value = "No se pudo conectar con el servidor: ${e.message}"
             }
         }
     }
@@ -153,14 +154,9 @@ class HistorialViewModel(
                     equipoId = equipo.id,
                     fecha = fecha,
                     observaciones = observaciones,
-
-                    // Datos del contacto de la visita
                     tecnico = "$cargo $rut",
-
-                    // Datos de la cuenta que registra
                     usuarioRegistro = usuarioRegistro,
                     usuarioRegistroId = usuarioRegistroId,
-
                     sincronizada = false,
                     rutaFoto = rutaFoto,
                     latitud = latitud,
@@ -189,11 +185,12 @@ class HistorialViewModel(
                 cargarDesdeServidor()
 
             } catch (e: Exception) {
-                _error.value = "Error al crear la visita"
+                _error.value = "Error al crear la visita: ${e.message}"
             }
         }
     }
 
+    // MARCAR VISITA COMO COMPLETADA
     fun marcarCompletada(visita: Visita) {
         viewModelScope.launch {
             try {
@@ -205,8 +202,19 @@ class HistorialViewModel(
 
                 cargarDesdeServidor()
 
+            } catch (e: HttpException) {
+                val detalle = try {
+                    e.response()?.errorBody()?.string()
+                } catch (ex: Exception) {
+                    null
+                }
+
+                _error.value =
+                    "Error HTTP ${e.code()}: ${detalle ?: e.message()}"
+
             } catch (e: Exception) {
-                _error.value = "No se pudo conectar con el servidor"
+                _error.value =
+                    "Error al completar visita: ${e.message ?: "Error desconocido"}"
             }
         }
     }
@@ -221,7 +229,7 @@ class HistorialViewModel(
                 cargarDesdeServidor()
 
             } catch (e: Exception) {
-                _error.value = "No se pudo conectar con el servidor"
+                _error.value = "No se pudo eliminar la visita: ${e.message}"
             }
         }
     }

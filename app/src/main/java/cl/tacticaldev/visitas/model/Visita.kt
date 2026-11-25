@@ -14,7 +14,7 @@ data class Visita(
     val tecnico: String,
 
     // Usuario de la aplicación que registró la visita.
-    val usuarioRegistro: String = "",
+    val usuarioRegistro: String? = null,
     val usuarioRegistroId: String = "",
 
     // Estado de sincronización.

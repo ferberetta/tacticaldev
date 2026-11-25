@@ -37,23 +37,27 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import cl.tacticaldev.visitas.network.ApiClient
 
 @Composable
 fun LoginScreen(
     onLoginExitoso: (Usuario) -> Unit
 ) {
-
     val context = LocalContext.current
 
-    val prefs = context.getSharedPreferences(
-        "usuarios",
-        Context.MODE_PRIVATE
-    )
+    val prefs = remember(context) {
+        context.getSharedPreferences(
+            "usuarios",
+            Context.MODE_PRIVATE
+        )
+    }
 
     val viewModel: AuthViewModel = viewModel(
-        factory = AuthViewModelFactory(
-            AuthRepository(prefs)
-        )
+        factory = remember(prefs) {
+            AuthViewModelFactory(
+                AuthRepository(prefs, ApiClient.usuariosApi)
+            )
+        }
     )
 
     val form by viewModel.state.collectAsState()
@@ -69,17 +73,14 @@ fun LoginScreen(
     }
 
     Scaffold { padding ->
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .padding(20.dp)
                 .verticalScroll(rememberScrollState()),
-
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
             Text(
                 text = "TacticalDEV",
                 style = MaterialTheme.typography.headlineLarge,
@@ -155,19 +156,15 @@ fun LoginScreen(
                     VisualTransformation.None
                 else
                     PasswordVisualTransformation(),
-
                 isError = form.errorPassword != null,
-
                 supportingText = {
                     form.errorPassword?.let {
                         Text(it)
                     }
                 },
-
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password
                 ),
-
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -183,9 +180,13 @@ fun LoginScreen(
                 onClick = {
                     viewModel.enviar()
                 },
+                enabled = !form.cargando,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Ingresar")
+                Text(
+                    if (form.cargando) "Ingresando..."
+                    else "Ingresar"
+                )
             }
         }
     }

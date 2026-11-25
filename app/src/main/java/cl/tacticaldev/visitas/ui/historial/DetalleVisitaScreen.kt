@@ -163,7 +163,7 @@ fun DetalleVisitaScreen(
             DatoDetalle("Técnico", visita.tecnico)
             DatoDetalle(
                 "Registrado por",
-                visita.usuarioRegistro.ifBlank { "No disponible" }
+                visita.usuarioRegistro?.takeIf { it.isNotBlank() } ?: "No disponible"
             )
             DatoDetalle("Observaciones", visita.observaciones)
 
