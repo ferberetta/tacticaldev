@@ -16,56 +16,83 @@ public class VisitaService {
     }
 
     public List<Visita> obtenerTodas() {
-        return repository.findAll();
+
+        List<Visita> visitas = repository.findAll();
+
+        for (Visita visita : visitas) {
+            normalizar(visita);
+        }
+
+        return visitas;
     }
 
     public Visita crear(Visita visita) {
         visita.setId(null);
+        normalizar(visita);
         return repository.save(visita);
     }
 
     public Optional<Visita> actualizar(Long id, Visita datos) {
 
-        return repository.findById(id).map(visitaExistente -> {
+        return repository.findById(id).map(existente -> {
 
-            // Actualizar solamente los campos recibidos.
             if (datos.getEquipoId() != null) {
-                visitaExistente.setEquipoId(datos.getEquipoId());
+                existente.setEquipoId(datos.getEquipoId());
             }
 
             if (datos.getFecha() != null) {
-                visitaExistente.setFecha(datos.getFecha());
+                existente.setFecha(datos.getFecha());
             }
 
             if (datos.getObservaciones() != null) {
-                visitaExistente.setObservaciones(datos.getObservaciones());
+                existente.setObservaciones(datos.getObservaciones());
             }
 
             if (datos.getTecnico() != null) {
-                visitaExistente.setTecnico(datos.getTecnico());
+                existente.setTecnico(datos.getTecnico());
             }
 
-            // Actualizar el estado del caso.
-            visitaExistente.setSincronizada(datos.isSincronizada());
+            existente.setSincronizada(datos.isSincronizada());
 
-            // Preservar información adicional si no viene en la petición.
             if (datos.getRutaFoto() != null) {
-                visitaExistente.setRutaFoto(datos.getRutaFoto());
+                existente.setRutaFoto(datos.getRutaFoto());
             }
 
             if (datos.getLatitud() != null) {
-                visitaExistente.setLatitud(datos.getLatitud());
+                existente.setLatitud(datos.getLatitud());
             }
 
             if (datos.getLongitud() != null) {
-                visitaExistente.setLongitud(datos.getLongitud());
+                existente.setLongitud(datos.getLongitud());
             }
 
-            return repository.save(visitaExistente);
+            normalizar(existente);
+
+            return repository.save(existente);
         });
     }
 
+    private void normalizar(Visita visita) {
+
+        if (visita.getEquipoId() == null) {
+            visita.setEquipoId(0L);
+        }
+
+        if (visita.getFecha() == null) {
+            visita.setFecha("");
+        }
+
+        if (visita.getObservaciones() == null) {
+            visita.setObservaciones("");
+        }
+
+        if (visita.getTecnico() == null) {
+            visita.setTecnico("");
+        }
+    }
+
     public boolean eliminar(Long id) {
+
         if (!repository.existsById(id)) {
             return false;
         }
