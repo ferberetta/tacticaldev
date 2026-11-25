@@ -1,6 +1,7 @@
 
 package cl.tacticaldev.visitas.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -16,10 +17,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import retrofit2.HttpException
 
 enum class FiltroHistorial {
     TODAS,
@@ -54,7 +55,7 @@ class HistorialViewModel(
     private val _temperatura = MutableStateFlow<Double?>(null)
     val temperatura: StateFlow<Double?> = _temperatura.asStateFlow()
 
-    // Lista ya filtrada según la pestaña
+    // Lista filtrada según la pestaña
     val visitasFiltradas: StateFlow<List<VisitaUi>> =
         combine(_todas, _filtro) { lista, f ->
             when (f) {
@@ -88,12 +89,14 @@ class HistorialViewModel(
                 _error.value = null
                 cargarDesdeServidor()
             } catch (e: Exception) {
-                _error.value = "No se pudo conectar con el servidor: ${e.message}"
+                Log.e("HISTORIAL", "Error al cargar visitas", e)
+                _error.value =
+                    "No se pudo conectar con el servidor: ${e.message}"
             }
         }
     }
 
-    // CREAR VISITA CON LOS DATOS DEL USUARIO REGISTRADOR
+    // CREAR VISITA
     fun crearVisita(
         equipoNombre: String,
         cargo: String,
@@ -168,6 +171,8 @@ class HistorialViewModel(
                     visitasEnMemoria.add(guardada)
 
                 } catch (e: Exception) {
+                    Log.e("HISTORIAL", "Error al guardar visita", e)
+
                     val idLocal = if (visitasEnMemoria.isEmpty()) {
                         1
                     } else {
@@ -185,6 +190,7 @@ class HistorialViewModel(
                 cargarDesdeServidor()
 
             } catch (e: Exception) {
+                Log.e("HISTORIAL", "Error al crear visita", e)
                 _error.value = "Error al crear la visita: ${e.message}"
             }
         }
@@ -196,11 +202,45 @@ class HistorialViewModel(
             try {
                 _error.value = null
 
-                visitaRepository.actualizar(
-                    visita.copy(sincronizada = true)
+                // Leer las propiedades como nullable para protegerse
+                // de valores null recibidos mediante Gson.
+                val idSeguro = (visita.id as Int?) ?: 0
+                val equipoIdSeguro = (visita.equipoId as Int?) ?: 0
+                val fechaSegura = (visita.fecha as String?) ?: ""
+                val observacionesSeguras =
+                    (visita.observaciones as String?) ?: ""
+                val tecnicoSeguro = (visita.tecnico as String?) ?: ""
+                val usuarioRegistroIdSeguro =
+                    (visita.usuarioRegistroId as String?) ?: ""
+
+                // Crear una visita nueva sin utilizar visita.copy().
+                val visitaActualizada = Visita(
+                    id = idSeguro,
+                    equipoId = equipoIdSeguro,
+                    fecha = fechaSegura,
+                    observaciones = observacionesSeguras,
+                    tecnico = tecnicoSeguro,
+                    usuarioRegistro = visita.usuarioRegistro,
+                    usuarioRegistroId = usuarioRegistroIdSeguro,
+                    sincronizada = true,
+                    rutaFoto = visita.rutaFoto,
+                    latitud = visita.latitud,
+                    longitud = visita.longitud
                 )
 
+                Log.d(
+                    "ERROR_COMPLETAR_VISITA",
+                    "Enviando actualización. ID: $idSeguro"
+                )
+
+                visitaRepository.actualizar(visitaActualizada)
+
                 cargarDesdeServidor()
+
+                Log.d(
+                    "ERROR_COMPLETAR_VISITA",
+                    "Visita completada correctamente. ID: $idSeguro"
+                )
 
             } catch (e: HttpException) {
                 val detalle = try {
@@ -209,16 +249,29 @@ class HistorialViewModel(
                     null
                 }
 
+                Log.e(
+                    "ERROR_COMPLETAR_VISITA",
+                    "Error HTTP ${e.code()}",
+                    e
+                )
+
                 _error.value =
                     "Error HTTP ${e.code()}: ${detalle ?: e.message()}"
 
             } catch (e: Exception) {
+                Log.e(
+                    "ERROR_COMPLETAR_VISITA",
+                    "Error al completar visita",
+                    e
+                )
+
                 _error.value =
                     "Error al completar visita: ${e.message ?: "Error desconocido"}"
             }
         }
     }
 
+    // ELIMINAR VISITA
     fun eliminar(id: Int) {
         viewModelScope.launch {
             try {
@@ -229,6 +282,7 @@ class HistorialViewModel(
                 cargarDesdeServidor()
 
             } catch (e: Exception) {
+                Log.e("HISTORIAL", "Error al eliminar visita", e)
                 _error.value = "No se pudo eliminar la visita: ${e.message}"
             }
         }
@@ -238,8 +292,10 @@ class HistorialViewModel(
         _error.value = null
     }
 
+    // OBTENER TEMPERATURA
     fun cargarTemperatura(latitud: Double?, longitud: Double?) {
         viewModelScope.launch {
+
             if (latitud == null || longitud == null) {
                 _temperatura.value = null
                 return@launch
@@ -250,11 +306,13 @@ class HistorialViewModel(
                     climaRepository.obtenerTemperatura(latitud, longitud)
 
             } catch (e: Exception) {
+                Log.e("HISTORIAL", "Error al obtener temperatura", e)
                 _temperatura.value = null
             }
         }
     }
 
+    // CARGAR VISITAS Y EQUIPOS DESDE EL SERVIDOR
     private suspend fun cargarDesdeServidor() {
 
         try {
@@ -278,6 +336,8 @@ class HistorialViewModel(
             }
 
         } catch (e: Exception) {
+            Log.e("HISTORIAL", "Error al cargar equipos", e)
+
             equiposCargados = listOf(
                 Equipo(
                     id = 1,
@@ -308,6 +368,7 @@ class HistorialViewModel(
             }
 
         } catch (e: Exception) {
+            Log.e("HISTORIAL", "Error al cargar visitas del servidor", e)
             visitas = visitasEnMemoria
         }
 
