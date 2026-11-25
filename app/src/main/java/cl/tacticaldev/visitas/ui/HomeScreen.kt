@@ -1,3 +1,4 @@
+
 package cl.tacticaldev.visitas.ui
 
 import androidx.compose.animation.AnimatedVisibility
@@ -50,7 +51,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,10 +66,14 @@ fun HomeScreen(
     onRegistrarVisita: () -> Unit,
     onVerEquipos: () -> Unit,
     onVerHistorial: () -> Unit,
-    onCerrarSesion: () -> Unit,
+    onGestionarUsuarios: () -> Unit,
+    onCerrarSesion: () -> Unit
 ) {
-    // Estado para controlar la animación de entrada
-    var animarEntrada by remember { mutableStateOf(value = false) }
+    val esAdministrador = usuario?.cargo == "Administrador"
+
+    var animarEntrada by remember {
+        mutableStateOf(false)
+    }
 
     LaunchedEffect(Unit) {
         animarEntrada = true
@@ -100,6 +104,7 @@ fun HomeScreen(
             )
         }
     ) { padding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -108,13 +113,14 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 1. TARJETA DE SALUDO Y USUARIO (Animación bloque 1)
+
+            // 1. SALUDO Y DATOS DEL USUARIO
             AnimatedVisibility(
                 visible = animarEntrada,
-                enter = fadeIn(animationSpec = tween(durationMillis = 400)) +
+                enter = fadeIn(tween(400)) +
                         slideInVertically(
                             initialOffsetY = { it / 2 },
-                            animationSpec = tween(durationMillis = 400)
+                            animationSpec = tween(400)
                         )
             ) {
                 Card(
@@ -133,8 +139,10 @@ fun HomeScreen(
                         Box(
                             modifier = Modifier
                                 .size(56.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary),
+                                .background(
+                                    MaterialTheme.colorScheme.primary,
+                                    CircleShape
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -148,27 +156,39 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.width(16.dp))
 
                         Column(modifier = Modifier.weight(1f)) {
-                            val nombreMostrar = usuario?.nombre?.ifBlank { null } ?: "Usuario"
+                            val nombreMostrar =
+                                usuario?.nombre?.takeIf { it.isNotBlank() } ?: "Usuario"
+
                             Text(
                                 text = "Hola $nombreMostrar",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
-                            val rutFormateado = usuario?.rut?.let { formatearRut(it) } ?: "Sin datos"
+
+                            val rutFormateado =
+                                usuario?.rut?.let { formatearRut(it) } ?: "Sin datos"
+
                             Text(
                                 text = "RUT: $rutFormateado",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(
+                                    alpha = 0.8f
+                                )
                             )
+
                             Spacer(modifier = Modifier.height(4.dp))
+
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(top = 2.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    modifier = Modifier.padding(
+                                        horizontal = 8.dp,
+                                        vertical = 2.dp
+                                    ),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -177,9 +197,13 @@ fun HomeScreen(
                                         tint = MaterialTheme.colorScheme.onPrimary,
                                         modifier = Modifier.size(14.dp)
                                     )
+
                                     Spacer(modifier = Modifier.width(4.dp))
+
                                     Text(
-                                        text = usuario?.cargo?.ifBlank { "Técnico" } ?: "Técnico",
+                                        text = usuario?.cargo?.takeIf {
+                                            it.isNotBlank()
+                                        } ?: "Técnico",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onPrimary,
                                         fontWeight = FontWeight.SemiBold
@@ -191,16 +215,25 @@ fun HomeScreen(
                 }
             }
 
-            // 2. RESUMEN SIMPLE (KPIs) (Animación bloque 2)
+            // 2. RESUMEN DE ESTADO
             AnimatedVisibility(
                 visible = animarEntrada,
-                enter = fadeIn(animationSpec = tween(durationMillis = 500, delayMillis = 150)) +
-                        slideInVertically(
-                            initialOffsetY = { it / 2 },
-                            animationSpec = tween(durationMillis = 500, delayMillis = 150)
-                        )
+                enter = fadeIn(
+                    animationSpec = tween(
+                        durationMillis = 500,
+                        delayMillis = 150
+                    )
+                ) + slideInVertically(
+                    initialOffsetY = { it / 2 },
+                    animationSpec = tween(
+                        durationMillis = 500,
+                        delayMillis = 150
+                    )
+                )
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(
                         text = "Resumen de estado",
                         style = MaterialTheme.typography.titleMedium,
@@ -211,11 +244,14 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Visitas pendientes de sincronizar
+
+                        // VISITAS PENDIENTES
                         Card(
                             modifier = Modifier
                                 .weight(1f)
-                                .clickable { onVerHistorial() },
+                                .clickable {
+                                    onVerHistorial()
+                                },
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = if (visitasPendientesCount > 0)
@@ -236,7 +272,9 @@ fun HomeScreen(
                                         MaterialTheme.colorScheme.onSecondaryContainer,
                                     modifier = Modifier.size(28.dp)
                                 )
+
                                 Spacer(modifier = Modifier.height(8.dp))
+
                                 Text(
                                     text = visitasPendientesCount.toString(),
                                     fontSize = 26.sp,
@@ -246,6 +284,7 @@ fun HomeScreen(
                                     else
                                         MaterialTheme.colorScheme.onSecondaryContainer
                                 )
+
                                 Text(
                                     text = "Visitas pendientes de sincronizar",
                                     style = MaterialTheme.typography.bodySmall,
@@ -257,11 +296,16 @@ fun HomeScreen(
                             }
                         }
 
-                        // Equipos con falla
+                        // EQUIPOS CON FALLA
+                        // Solo el administrador puede abrir gestión de equipos.
                         Card(
                             modifier = Modifier
                                 .weight(1f)
-                                .clickable { onVerEquipos() },
+                                .clickable(
+                                    enabled = esAdministrador
+                                ) {
+                                    onVerEquipos()
+                                },
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = if (equiposConFallaCount > 0)
@@ -282,7 +326,9 @@ fun HomeScreen(
                                         MaterialTheme.colorScheme.onTertiaryContainer,
                                     modifier = Modifier.size(28.dp)
                                 )
+
                                 Spacer(modifier = Modifier.height(8.dp))
+
                                 Text(
                                     text = equiposConFallaCount.toString(),
                                     fontSize = 26.sp,
@@ -292,6 +338,7 @@ fun HomeScreen(
                                     else
                                         MaterialTheme.colorScheme.onTertiaryContainer
                                 )
+
                                 Text(
                                     text = "Equipos con falla registrados",
                                     style = MaterialTheme.typography.bodySmall,
@@ -306,23 +353,32 @@ fun HomeScreen(
                 }
             }
 
-            // 3. ACCESOS RÁPIDOS (Animación bloque 3)
+            // 3. ACCESOS RÁPIDOS
             AnimatedVisibility(
                 visible = animarEntrada,
-                enter = fadeIn(animationSpec = tween(durationMillis = 600, delayMillis = 300)) +
-                        slideInVertically(
-                            initialOffsetY = { it / 2 },
-                            animationSpec = tween(durationMillis = 600, delayMillis = 300)
-                        )
+                enter = fadeIn(
+                    animationSpec = tween(
+                        durationMillis = 600,
+                        delayMillis = 300
+                    )
+                ) + slideInVertically(
+                    initialOffsetY = { it / 2 },
+                    animationSpec = tween(
+                        durationMillis = 600,
+                        delayMillis = 300
+                    )
+                )
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     Text(
                         text = "Accesos Rápidos",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
 
-                    // Card 1: Registrar Visita
+                    // TODOS LOS PERFILES PUEDEN REGISTRAR VISITAS
                     AccesoCard(
                         titulo = "Registrar visita",
                         subtitulo = "Crear un nuevo informe o reporte técnico",
@@ -331,21 +387,33 @@ fun HomeScreen(
                         destacado = true
                     )
 
-                    // Card 2: Equipos
-                    AccesoCard(
-                        titulo = "Equipos",
-                        subtitulo = "Consultar el catálogo y estado de equipos",
-                        icono = Icons.Default.Devices,
-                        onClick = onVerEquipos
-                    )
+                    // SOLO ADMINISTRADOR PUEDE GESTIONAR EQUIPOS
+                    if (esAdministrador) {
+                        AccesoCard(
+                            titulo = "Equipos",
+                            subtitulo = "Consultar y gestionar el catálogo de equipos",
+                            icono = Icons.Default.Devices,
+                            onClick = onVerEquipos
+                        )
+                    }
 
-                    // Card 3: Historial de visitas
+                    // TODOS LOS PERFILES PUEDEN CONSULTAR HISTORIAL
                     AccesoCard(
                         titulo = "Historial de visitas",
                         subtitulo = "Ver revisiones anteriores y estado de sincronización",
                         icono = Icons.Default.History,
                         onClick = onVerHistorial
                     )
+
+                    // SOLO ADMINISTRADOR PUEDE GESTIONAR USUARIOS
+                    if (esAdministrador) {
+                        AccesoCard(
+                            titulo = "Gestión de usuarios",
+                            subtitulo = "Registrar técnicos y vendedores",
+                            icono = Icons.Default.Person,
+                            onClick = onGestionarUsuarios
+                        )
+                    }
                 }
             }
         }
@@ -363,7 +431,9 @@ private fun AccesoCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
+            .clickable {
+                onClick()
+            },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (destacado)
@@ -381,12 +451,12 @@ private fun AccesoCard(
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .clip(CircleShape)
                     .background(
                         if (destacado)
                             MaterialTheme.colorScheme.primary
                         else
-                            MaterialTheme.colorScheme.surface
+                            MaterialTheme.colorScheme.surface,
+                        CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -413,6 +483,7 @@ private fun AccesoCard(
                     else
                         MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
                 Text(
                     text = subtitulo,
                     style = MaterialTheme.typography.bodyMedium,

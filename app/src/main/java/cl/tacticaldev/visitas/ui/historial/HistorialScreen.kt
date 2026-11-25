@@ -1,3 +1,4 @@
+
 package cl.tacticaldev.visitas.ui.historial
 
 import androidx.compose.animation.AnimatedVisibility
@@ -69,9 +70,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun HistorialScreen(
     viewModel: HistorialViewModel,
-    onVolver: (() -> Unit)? = null,          // null = es la pantalla de inicio, sin flecha
+    onVolver: (() -> Unit)? = null,
     onNuevaVisita: () -> Unit = {},
-    onVerEquipos: (() -> Unit)? = null,      // null = no se muestra el acceso a equipos
+    onVerEquipos: (() -> Unit)? = null,
     onVisitaClick: (VisitaUi) -> Unit = {}
 ) {
     val filtro by viewModel.filtro.collectAsState()
@@ -80,35 +81,50 @@ fun HistorialScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Historial de visitas") },
+                title = {
+                    Text("Historial de visitas")
+                },
                 navigationIcon = {
                     if (onVolver != null) {
                         IconButton(onClick = onVolver) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Volver"
+                            )
                         }
                     }
                 },
                 actions = {
                     if (onVerEquipos != null) {
                         IconButton(onClick = onVerEquipos) {
-                            Icon(Icons.Filled.Settings, contentDescription = "Ver equipos")
+                            Icon(
+                                Icons.Filled.Settings,
+                                contentDescription = "Ver equipos"
+                            )
                         }
                     }
-                    // Botón + azul, arriba a la derecha, con animación al apretarlo
+
                     BotonAgregar(onClick = onNuevaVisita)
                 }
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
+        Column(
+            modifier = Modifier.padding(padding)
+        ) {
             Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.padding(
+                    horizontal = 16.dp,
+                    vertical = 8.dp
+                ),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FiltroHistorial.values().forEach { opcion ->
                     FilterChip(
                         selected = filtro == opcion,
-                        onClick = { viewModel.cambiarFiltro(opcion) },
+                        onClick = {
+                            viewModel.cambiarFiltro(opcion)
+                        },
                         label = {
                             Text(
                                 when (opcion) {
@@ -123,25 +139,43 @@ fun HistorialScreen(
             }
 
             if (lista.isEmpty()) {
-                var visibleVacio by remember { mutableStateOf(false) }
-                LaunchedEffect(Unit) { visibleVacio = true }
+                var visibleVacio by remember {
+                    mutableStateOf(false)
+                }
+
+                LaunchedEffect(Unit) {
+                    visibleVacio = true
+                }
+
                 val alfaVacio by animateFloatAsState(
                     targetValue = if (visibleVacio) 1f else 0f,
                     animationSpec = tween(400),
                     label = "alfaVacio"
                 )
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Aún no hay visitas", modifier = Modifier.alpha(alfaVacio))
+
+                Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "Aún no hay visitas",
+                        modifier = Modifier.alpha(alfaVacio)
+                    )
                 }
             } else {
                 LazyColumn(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(lista, key = { it.visita.id }) { item ->
+                    items(
+                        lista,
+                        key = { it.visita.id }
+                    ) { item ->
                         TarjetaVisita(
                             item = item,
-                            onClick = { onVisitaClick(item) },
+                            onClick = {
+                                onVisitaClick(item)
+                            },
                             modifier = Modifier.animateItem()
                         )
                     }
@@ -151,13 +185,19 @@ fun HistorialScreen(
     }
 }
 
-// Botón + redondo y azul. Al apretarlo: se achica un poco al presionar y luego
-// "rebota" mientras el + gira 90° (unos 250 ms); recién entonces abre el formulario.
+// Botón + redondo y azul con animación.
 @Composable
 fun BotonAgregar(onClick: () -> Unit) {
-    val interaccion = remember { MutableInteractionSource() }
+    val interaccion = remember {
+        MutableInteractionSource()
+    }
+
     val presionado by interaccion.collectIsPressedAsState()
-    var animando by remember { mutableStateOf(false) }
+
+    var animando by remember {
+        mutableStateOf(false)
+    }
+
     val scope = rememberCoroutineScope()
 
     val escala by animateFloatAsState(
@@ -166,9 +206,12 @@ fun BotonAgregar(onClick: () -> Unit) {
             presionado -> 0.85f
             else -> 1f
         },
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy
+        ),
         label = "escalaBoton"
     )
+
     val giro by animateFloatAsState(
         targetValue = if (animando) 90f else 0f,
         animationSpec = tween(250),
@@ -184,10 +227,17 @@ fun BotonAgregar(onClick: () -> Unit) {
                 scaleY = escala
                 rotationZ = giro
             }
-            .background(Color(0xFF1976D2), CircleShape)
-            .clickable(interactionSource = interaccion, indication = null) {
+            .background(
+                Color(0xFF1976D2),
+                CircleShape
+            )
+            .clickable(
+                interactionSource = interaccion,
+                indication = null
+            ) {
                 if (!animando) {
                     animando = true
+
                     scope.launch {
                         delay(250)
                         onClick()
@@ -197,7 +247,11 @@ fun BotonAgregar(onClick: () -> Unit) {
             },
         contentAlignment = Alignment.Center
     ) {
-        Icon(Icons.Filled.Add, contentDescription = "Nueva visita", tint = Color.White)
+        Icon(
+            Icons.Filled.Add,
+            contentDescription = "Nueva visita",
+            tint = Color.White
+        )
     }
 }
 
@@ -207,16 +261,26 @@ fun TarjetaVisita(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { visible = true }
+    var visible by remember {
+        mutableStateOf(false)
+    }
+
+    LaunchedEffect(Unit) {
+        visible = true
+    }
 
     AnimatedVisibility(
         visible = visible,
         modifier = modifier,
-        enter = fadeIn(tween(350)) + slideInVertically(tween(350)) { it / 4 }
+        enter = fadeIn(tween(350)) +
+                slideInVertically(tween(350)) { it / 4 }
     ) {
         Card(
-            modifier = Modifier.fillMaxWidth().clickable { onClick() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    onClick()
+                },
             shape = RoundedCornerShape(16.dp)
         ) {
             Row(
@@ -226,14 +290,42 @@ fun TarjetaVisita(
                 Box(
                     modifier = Modifier
                         .size(56.dp)
-                        .background(Color(0xFFB0BEC5), RoundedCornerShape(8.dp))
+                        .background(
+                            Color(0xFFB0BEC5),
+                            RoundedCornerShape(8.dp)
+                        )
                 )
+
                 Spacer(Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(item.visita.fecha, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text(item.equipoNombre, fontSize = 14.sp)
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        item.visita.fecha,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+
+                    Text(
+                        item.equipoNombre,
+                        fontSize = 14.sp
+                    )
+
+                    Text(
+                        "Registrado por: " +
+                                item.visita.usuarioRegistro.ifBlank {
+                                    "No disponible"
+                                },
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+
                     Spacer(Modifier.height(6.dp))
-                    EtiquetaEstado(sincronizada = item.visita.sincronizada)
+
+                    EtiquetaEstado(
+                        sincronizada = item.visita.sincronizada
+                    )
                 }
             }
         }
@@ -243,26 +335,53 @@ fun TarjetaVisita(
 @Composable
 fun EtiquetaEstado(sincronizada: Boolean) {
     val fondo by animateColorAsState(
-        targetValue = if (sincronizada) Color(0xFFD7F5E0) else Color(0xFFFFE3CC),
+        targetValue = if (sincronizada) {
+            Color(0xFFD7F5E0)
+        } else {
+            Color(0xFFFFE3CC)
+        },
         animationSpec = tween(400),
         label = "fondoEstado"
     )
+
     val punto by animateColorAsState(
-        targetValue = if (sincronizada) Color(0xFF2E9E5B) else Color(0xFFE8721C),
+        targetValue = if (sincronizada) {
+            Color(0xFF2E9E5B)
+        } else {
+            Color(0xFFE8721C)
+        },
         animationSpec = tween(400),
         label = "puntoEstado"
     )
-    val texto = if (sincronizada) "Sincronizada" else "Pendiente"
+
+    val texto = if (sincronizada) {
+        "Sincronizada"
+    } else {
+        "Pendiente"
+    }
 
     Row(
         modifier = Modifier
             .background(fondo, RoundedCornerShape(50))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .padding(
+                horizontal = 10.dp,
+                vertical = 4.dp
+            ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(Modifier.size(8.dp).background(punto, CircleShape))
+        Box(
+            Modifier
+                .size(8.dp)
+                .background(punto, CircleShape)
+        )
+
         Spacer(Modifier.width(6.dp))
-        Text(texto, fontSize = 12.sp, color = Color.Black)
+
+        Text(
+            texto,
+            fontSize = 12.sp,
+            color = Color.Black
+        )
     }
 }
 
@@ -270,12 +389,44 @@ fun EtiquetaEstado(sincronizada: Boolean) {
 @Composable
 fun HistorialScreenPreview() {
     val ejemplo = listOf(
-        VisitaUi(Visita(1, 1, "12-08-2026 10:24", "Todo bien", "Juan Perez", true), "Vitrina Freezer A-102", "Minimarket Maipú"),
-        VisitaUi(Visita(2, 2, "10-08-2026 15:37", "Ruido", "Fernanda", false), "Conservadora B-07", "Lider Cerrillos")
+        VisitaUi(
+            visita = Visita(
+                id = 1,
+                equipoId = 1,
+                fecha = "12-08-2026 10:24",
+                observaciones = "Todo bien",
+                tecnico = "Juan Perez",
+                usuarioRegistro = "Juan Perez",
+                usuarioRegistroId = "12345678-9",
+                sincronizada = true
+            ),
+            equipoNombre = "Vitrina Freezer A-102",
+            puntoVenta = "Minimarket Maipú"
+        ),
+        VisitaUi(
+            visita = Visita(
+                id = 2,
+                equipoId = 2,
+                fecha = "10-08-2026 15:37",
+                observaciones = "Ruido",
+                tecnico = "Fernanda",
+                usuarioRegistro = "Fernanda",
+                usuarioRegistroId = "98765432-1",
+                sincronizada = false
+            ),
+            equipoNombre = "Conservadora B-07",
+            puntoVenta = "Lider Cerrillos"
+        )
     )
+
     MaterialTheme {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            ejemplo.forEach { TarjetaVisita(it, {}) }
+        Column(
+            Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            ejemplo.forEach {
+                TarjetaVisita(it, {})
+            }
         }
     }
 }

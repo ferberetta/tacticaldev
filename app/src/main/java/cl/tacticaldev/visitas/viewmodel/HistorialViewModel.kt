@@ -1,3 +1,4 @@
+
 package cl.tacticaldev.visitas.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -19,7 +20,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-enum class FiltroHistorial { TODAS, COMPLETADAS, PENDIENTES }
+enum class FiltroHistorial {
+    TODAS,
+    COMPLETADAS,
+    PENDIENTES
+}
 
 // Visita + datos del equipo, listo para mostrar en pantalla
 data class VisitaUi(
@@ -49,13 +54,22 @@ class HistorialViewModel(
     val temperatura: StateFlow<Double?> = _temperatura.asStateFlow()
 
     // Lista ya filtrada según la pestaña
-    val visitasFiltradas: StateFlow<List<VisitaUi>> = combine(_todas, _filtro) { lista, f ->
-        when (f) {
-            FiltroHistorial.TODAS -> lista
-            FiltroHistorial.COMPLETADAS -> lista.filter { it.visita.sincronizada }
-            FiltroHistorial.PENDIENTES -> lista.filter { !it.visita.sincronizada }
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val visitasFiltradas: StateFlow<List<VisitaUi>> =
+        combine(_todas, _filtro) { lista, f ->
+            when (f) {
+                FiltroHistorial.TODAS -> lista
+
+                FiltroHistorial.COMPLETADAS ->
+                    lista.filter { it.visita.sincronizada }
+
+                FiltroHistorial.PENDIENTES ->
+                    lista.filter { !it.visita.sincronizada }
+            }
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            emptyList()
+        )
 
     private var visitasEnMemoria: MutableList<Visita> = mutableListOf()
 
@@ -78,6 +92,7 @@ class HistorialViewModel(
         }
     }
 
+    // CREAR VISITA CON LOS DATOS DEL USUARIO REGISTRADOR
     fun crearVisita(
         equipoNombre: String,
         cargo: String,
@@ -85,21 +100,36 @@ class HistorialViewModel(
         observaciones: String,
         rutaFoto: String?,
         latitud: Double?,
-        longitud: Double?
+        longitud: Double?,
+        usuarioRegistro: String,
+        usuarioRegistroId: String
     ) {
         viewModelScope.launch {
             try {
                 _error.value = null
+
                 try {
                     val equiposActuales = equipoRepository.obtenerTodos()
+
                     if (equiposActuales.isNotEmpty()) {
                         equiposCargados = equiposActuales
                     }
+
                 } catch (e: Exception) {
                     if (equiposCargados.isEmpty()) {
                         equiposCargados = listOf(
-                            Equipo(id = 1, nombre = "Refrigeradores", ubicacion = "Sin asignar", estado = "Operativo"),
-                            Equipo(id = 2, nombre = "Conservadoras", ubicacion = "Sin asignar", estado = "Operativo")
+                            Equipo(
+                                id = 1,
+                                nombre = "Refrigeradores",
+                                ubicacion = "Sin asignar",
+                                estado = "Operativo"
+                            ),
+                            Equipo(
+                                id = 2,
+                                nombre = "Conservadoras",
+                                ubicacion = "Sin asignar",
+                                estado = "Operativo"
+                            )
                         )
                     }
                 }
@@ -113,14 +143,24 @@ class HistorialViewModel(
                     return@launch
                 }
 
-                val fecha = SimpleDateFormat("dd-MM-yyyy HH:mm", Locale.getDefault())
-                    .format(Date())
+                val fecha = SimpleDateFormat(
+                    "dd-MM-yyyy HH:mm",
+                    Locale.getDefault()
+                ).format(Date())
+
                 val nuevaVisita = Visita(
                     id = 0,
                     equipoId = equipo.id,
                     fecha = fecha,
                     observaciones = observaciones,
+
+                    // Datos del contacto de la visita
                     tecnico = "$cargo $rut",
+
+                    // Datos de la cuenta que registra
+                    usuarioRegistro = usuarioRegistro,
+                    usuarioRegistroId = usuarioRegistroId,
+
                     sincronizada = false,
                     rutaFoto = rutaFoto,
                     latitud = latitud,
@@ -130,13 +170,24 @@ class HistorialViewModel(
                 try {
                     val guardada = visitaRepository.crear(nuevaVisita)
                     visitasEnMemoria.add(guardada)
+
                 } catch (e: Exception) {
-                    val idLocal = if (visitasEnMemoria.isEmpty()) 1 else visitasEnMemoria.maxOf { it.id } + 1
-                    visitasEnMemoria.add(nuevaVisita.copy(id = idLocal))
-                    _error.value = "Guardado localmente. Sin conexión al servidor."
+                    val idLocal = if (visitasEnMemoria.isEmpty()) {
+                        1
+                    } else {
+                        visitasEnMemoria.maxOf { it.id } + 1
+                    }
+
+                    visitasEnMemoria.add(
+                        nuevaVisita.copy(id = idLocal)
+                    )
+
+                    _error.value =
+                        "Guardado localmente. Sin conexión al servidor."
                 }
 
                 cargarDesdeServidor()
+
             } catch (e: Exception) {
                 _error.value = "Error al crear la visita"
             }
@@ -147,8 +198,13 @@ class HistorialViewModel(
         viewModelScope.launch {
             try {
                 _error.value = null
-                visitaRepository.actualizar(visita.copy(sincronizada = true))
+
+                visitaRepository.actualizar(
+                    visita.copy(sincronizada = true)
+                )
+
                 cargarDesdeServidor()
+
             } catch (e: Exception) {
                 _error.value = "No se pudo conectar con el servidor"
             }
@@ -159,8 +215,11 @@ class HistorialViewModel(
         viewModelScope.launch {
             try {
                 _error.value = null
+
                 visitaRepository.eliminar(id)
+
                 cargarDesdeServidor()
+
             } catch (e: Exception) {
                 _error.value = "No se pudo conectar con el servidor"
             }
@@ -177,8 +236,11 @@ class HistorialViewModel(
                 _temperatura.value = null
                 return@launch
             }
+
             try {
-                _temperatura.value = climaRepository.obtenerTemperatura(latitud, longitud)
+                _temperatura.value =
+                    climaRepository.obtenerTemperatura(latitud, longitud)
+
             } catch (e: Exception) {
                 _temperatura.value = null
             }
@@ -186,41 +248,73 @@ class HistorialViewModel(
     }
 
     private suspend fun cargarDesdeServidor() {
+
         try {
             equiposCargados = equipoRepository.obtenerTodos()
+
             if (equiposCargados.isEmpty()) {
                 equiposCargados = listOf(
-                    Equipo(id = 1, nombre = "Refrigeradores", ubicacion = "Sin asignar", estado = "Operativo"),
-                    Equipo(id = 2, nombre = "Conservadoras", ubicacion = "Sin asignar", estado = "Operativo")
+                    Equipo(
+                        id = 1,
+                        nombre = "Refrigeradores",
+                        ubicacion = "Sin asignar",
+                        estado = "Operativo"
+                    ),
+                    Equipo(
+                        id = 2,
+                        nombre = "Conservadoras",
+                        ubicacion = "Sin asignar",
+                        estado = "Operativo"
+                    )
                 )
             }
+
         } catch (e: Exception) {
             equiposCargados = listOf(
-                Equipo(id = 1, nombre = "Refrigeradores", ubicacion = "Sin asignar", estado = "Operativo"),
-                Equipo(id = 2, nombre = "Conservadoras", ubicacion = "Sin asignar", estado = "Operativo")
+                Equipo(
+                    id = 1,
+                    nombre = "Refrigeradores",
+                    ubicacion = "Sin asignar",
+                    estado = "Operativo"
+                ),
+                Equipo(
+                    id = 2,
+                    nombre = "Conservadoras",
+                    ubicacion = "Sin asignar",
+                    estado = "Operativo"
+                )
             )
         }
 
-        val equiposPorId = equiposCargados.associateBy { it.id }
+        val equiposPorId = equiposCargados.associateBy {
+            it.id
+        }
 
         var visitas = emptyList<Visita>()
+
         try {
             visitas = visitaRepository.obtenerTodas()
+
             if (visitas.isNotEmpty()) {
                 visitasEnMemoria = visitas.toMutableList()
             }
+
         } catch (e: Exception) {
             visitas = visitasEnMemoria
         }
 
-        _todas.value = visitas.sortedByDescending { it.id }.map { v ->
-            val e = equiposPorId[v.equipoId]
-            VisitaUi(
-                visita = v,
-                equipoNombre = e?.nombre ?: "Equipo desconocido",
-                puntoVenta = e?.ubicacion ?: ""
-            )
-        }
+        _todas.value = visitas
+            .sortedByDescending { it.id }
+            .map { v ->
+
+                val equipo = equiposPorId[v.equipoId]
+
+                VisitaUi(
+                    visita = v,
+                    equipoNombre = equipo?.nombre ?: "Equipo desconocido",
+                    puntoVenta = equipo?.ubicacion ?: ""
+                )
+            }
     }
 }
 
@@ -229,8 +323,13 @@ class HistorialViewModelFactory(
     private val equipoRepository: EquipoRepository,
     private val climaRepository: ClimaRepository
 ) : ViewModelProvider.Factory {
+
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return HistorialViewModel(visitaRepository, equipoRepository, climaRepository) as T
+        return HistorialViewModel(
+            visitaRepository,
+            equipoRepository,
+            climaRepository
+        ) as T
     }
 }
